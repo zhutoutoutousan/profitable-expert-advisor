@@ -71,7 +71,70 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 | Equity Drawdown Relative | 15.85% ($250.78) |
 
 **Balance Sheet:**
-![Balance Sheet](RSIDivergenceRebound/test-balance.jpg)
+![RSI Balance Sheet](RSIDivergenceRebound/test-balance.jpg)
+
+### 2. EMA Crossover Skirmish
+A strategy that uses Exponential Moving Average (EMA) crossovers with advanced scoring and position management.
+
+**Key Features:**
+- EMA crossover detection
+- Advanced scoring system
+- Trailing stop management
+- Position scaling and reversal capabilities
+
+**Strategy Settings:**
+- Symbol: XAUUSD
+- Period: H1 (2021.01.01 - 2025.04.11)
+- Magic Number: 42
+- Score Threshold: 5200
+- Slope Threshold: 93
+- Max Score: 7900.0
+- Cooldown Minutes: 18
+- Trade Cooldown Minutes: 24
+- EMA Time Frame: 16385
+- EMA Period: 64
+- Cross Over Step: 950.0
+- Slope Threshold Step: 635.0
+- EMA Distance Step: 150.0
+- ATR Multiplier: 7.6
+- Trailing Stop: 5.0
+- Max Crossover Trades: 4
+- Max Drawdown: 10%
+- Minimum Lot Size: 0.01
+- Max Time in Position: 9 hours
+- Trade Length Threshold: 98
+- Reverse TP: 32
+- Reverse Lot Size Multiplier: 15
+- Secondary Position Hold Time: 32
+
+**Performance Metrics:**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $388.52 |
+| Gross Profit | $391.65 |
+| Gross Loss | -$3.13 |
+| Profit Factor | 125.13 |
+| Recovery Factor | 11.66 |
+| Expected Payoff | $0.72 |
+| Sharpe Ratio | 41.49 |
+| AHPR | 1.0006 (0.06%) |
+| GHPR | 1.0006 (0.06%) |
+
+**Trade Statistics:**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 82% real ticks |
+| Total Bars | 25,283 |
+| Total Ticks | 165,999,507 |
+| Balance Drawdown Absolute | $0.00 |
+| Equity Drawdown Absolute | $0.10 |
+| Balance Drawdown Maximal | $0.69 (0.05%) |
+| Equity Drawdown Maximal | $33.32 (2.56%) |
+| Balance Drawdown Relative | 0.05% ($0.69) |
+| Equity Drawdown Relative | 2.92% ($30.23) |
+
+**Balance Sheet:**
+![EMA Balance Sheet](EMACrossOverSkirmish/test-balance.jpg)
 
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
