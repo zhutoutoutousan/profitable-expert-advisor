@@ -31,7 +31,7 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 - Max Consecutive Losses: 3
 - Max Lot Size: 0.1
 
-**Performance Metrics:**
+**Performance Metrics (2021-2025):**
 | Metric | Value |
 |--------|-------|
 | Total Net Profit | $1,344.74 |
@@ -44,7 +44,7 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 | AHPR | 1.0033 (0.33%) |
 | GHPR | 1.0031 (0.31%) |
 
-**Trade Statistics:**
+**Trade Statistics (2021-2025):**
 | Statistic | Value |
 |-----------|-------|
 | Total Trades | 276 |
@@ -60,7 +60,7 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 | Max Consecutive Wins | 3 ($179.71) |
 | Max Consecutive Losses | 15 (-$159.89) |
 
-**Drawdown Analysis:**
+**Drawdown Analysis (2021-2025):**
 | Metric | Value |
 |--------|-------|
 | Balance Drawdown Absolute | $18.62 |
@@ -70,8 +70,11 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 | Balance Drawdown Relative | 13.47% ($210.14) |
 | Equity Drawdown Relative | 15.85% ($250.78) |
 
-**Balance Sheet:**
+**Balance Sheet (2021-2025):**
 ![RSI Balance Sheet](RSIDivergenceRebound/test-balance.jpg)
+
+**Additional Test Results (2008):**
+![RSI Balance Sheet 2008](RSIDivergenceRebound/balance-2008.jpg)
 
 ### 2. EMA Crossover Skirmish
 A strategy that uses Exponential Moving Average (EMA) crossovers with advanced scoring and position management.
@@ -107,7 +110,7 @@ A strategy that uses Exponential Moving Average (EMA) crossovers with advanced s
 - Reverse Lot Size Multiplier: 15
 - Secondary Position Hold Time: 32
 
-**Performance Metrics:**
+**Performance Metrics (2021-2025):**
 | Metric | Value |
 |--------|-------|
 | Total Net Profit | $388.52 |
@@ -120,7 +123,7 @@ A strategy that uses Exponential Moving Average (EMA) crossovers with advanced s
 | AHPR | 1.0006 (0.06%) |
 | GHPR | 1.0006 (0.06%) |
 
-**Trade Statistics:**
+**Trade Statistics (2021-2025):**
 | Statistic | Value |
 |-----------|-------|
 | History Quality | 82% real ticks |
@@ -133,8 +136,11 @@ A strategy that uses Exponential Moving Average (EMA) crossovers with advanced s
 | Balance Drawdown Relative | 0.05% ($0.69) |
 | Equity Drawdown Relative | 2.92% ($30.23) |
 
-**Balance Sheet:**
+**Balance Sheet (2021-2025):**
 ![EMA Balance Sheet](EMACrossOverSkirmish/test-balance.jpg)
+
+**Additional Test Results (2008):**
+![EMA Balance Sheet 2008](EMACrossOverSkirmish/balance-2008.jpg)
 
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
