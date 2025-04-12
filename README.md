@@ -142,6 +142,72 @@ A strategy that uses Exponential Moving Average (EMA) crossovers with advanced s
 **Additional Test Results (2008):**
 ![EMA Balance Sheet 2008](EMACrossOverSkirmish/balance-2008.jpg)
 
+### 3. RSI Divergence Extrema
+
+A strategy that combines RSI divergence with extreme price points detection for enhanced market reversal signals.
+
+**Key Features:**
+- RSI divergence patterns detection
+- Extreme price points identification
+- Dynamic exit based on RSI thresholds
+- Advanced risk management
+
+**Strategy Settings:**
+- Symbol: AUDUSD
+- Period: H1 (2021.01.01 - 2025.04.11)
+- RSI Period: 14
+- RSI Overbought: 70
+- RSI Oversold: 30
+- Base Lot Size: 0.01
+- Exit Buy RSI Threshold: 60.0
+- Exit Sell RSI Threshold: 40.0
+- Bar Time Frame: 16385
+
+**Performance Metrics (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $141.61 |
+| Gross Profit | $508.54 |
+| Gross Loss | -$366.93 |
+| Profit Factor | 1.39 |
+| Recovery Factor | 3.37 |
+| Expected Payoff | $0.59 |
+| Sharpe Ratio | 1.72 |
+| AHPR | 1.0009 (0.09%) |
+| GHPR | 1.0009 (0.09%) |
+
+**Trade Statistics (2021-2025):**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 82% real ticks |
+| Total Bars | 26,604 |
+| Total Ticks | 116,467,811 |
+| Total Trades | 240 |
+| Total Deals | 480 |
+| Profit Trades | 158 (65.83%) |
+| Loss Trades | 82 (34.17%) |
+| Short Trades Won | 70.73% |
+| Long Trades Won | 60.68% |
+| Largest Profit Trade | $12.35 |
+| Largest Loss Trade | -$18.76 |
+| Average Profit Trade | $3.22 |
+| Average Loss Trade | -$4.47 |
+| Max Consecutive Wins | 11 ($35.96) |
+| Max Consecutive Losses | 4 (-$26.61) |
+
+**Drawdown Analysis (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Balance Drawdown Absolute | $6.16 |
+| Equity Drawdown Absolute | $14.13 |
+| Balance Drawdown Maximal | $34.06 (4.50%) |
+| Equity Drawdown Maximal | $42.06 (5.54%) |
+| Balance Drawdown Relative | 4.55% ($32.84) |
+| Equity Drawdown Relative | 5.54% ($42.06) |
+
+**Balance Sheet (2021-2025):**
+![RSI Extrema Balance Sheet](RSIDivergenceExtrema/test-balance.jpg)
+
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
 - Custom strategy implementation
