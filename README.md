@@ -1,3 +1,18 @@
+# Table of Contents
+- [Table of Contents](#table-of-contents)
+- [Profitable Expert Advisors Collection](#profitable-expert-advisors-collection)
+  - [Project Overview](#project-overview)
+  - [Available Expert Advisors](#available-expert-advisors)
+    - [1. RSI Divergence Rebound](#1-rsi-divergence-rebound)
+    - [2. EMA Crossover Skirmish](#2-ema-crossover-skirmish)
+    - [3. RSI Divergence Extrema AUDUSD](#3-rsi-divergence-extrema-audusd)
+    - [4. RSI Divergence Extrema EURUSD](#4-rsi-divergence-extrema-eurusd)
+  - [Technical Details](#technical-details)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Disclaimer](#disclaimer)
+
+
 # Profitable Expert Advisors Collection
 
 ## Project Overview
@@ -73,9 +88,6 @@ A strategy that combines RSI (Relative Strength Index) divergence detection with
 **Balance Sheet (2021-2025):**
 ![RSI Balance Sheet](RSIDivergenceRebound/test-balance.jpg)
 
-**Additional Test Results (2008):**
-![RSI Balance Sheet 2008](RSIDivergenceRebound/balance-2008.jpg)
-
 ### 2. EMA Crossover Skirmish
 A strategy that uses Exponential Moving Average (EMA) crossovers with advanced scoring and position management.
 
@@ -139,10 +151,8 @@ A strategy that uses Exponential Moving Average (EMA) crossovers with advanced s
 **Balance Sheet (2021-2025):**
 ![EMA Balance Sheet](EMACrossOverSkirmish/test-balance.jpg)
 
-**Additional Test Results (2008):**
-![EMA Balance Sheet 2008](EMACrossOverSkirmish/balance-2008.jpg)
 
-### 3. RSI Divergence Extrema
+### 3. RSI Divergence Extrema AUDUSD
 
 A strategy that combines RSI divergence with extreme price points detection for enhanced market reversal signals.
 
@@ -206,7 +216,77 @@ A strategy that combines RSI divergence with extreme price points detection for 
 | Equity Drawdown Relative | 5.54% ($42.06) |
 
 **Balance Sheet (2021-2025):**
-![RSI Extrema Balance Sheet](RSIDivergenceExtrema/test-balance.jpg)
+![RSI Extrema Balance Sheet](RSIDivergenceExtremaAUDUSD/test-balance.jpg)
+
+### 4. RSI Divergence Extrema EURUSD
+
+A strategy that combines RSI divergence with extreme price points detection for enhanced market reversal signals on EURUSD.
+
+**Key Features:**
+- RSI divergence patterns detection
+- Extreme price points identification
+- Dynamic exit based on RSI thresholds
+- Advanced risk management with hedging
+- Stuck trade detection and management
+
+**Strategy Settings:**
+- Symbol: EURUSD
+- Period: H6 (2021.01.01 - 2025.04.11)
+- RSI Period: 14
+- RSI Overbought: 71
+- RSI Oversold: 33
+- Base Lot Size: 0.01
+- Exit Buy RSI Threshold: 60
+- Exit Sell RSI Threshold: 40
+- Bar Time Frame: 16390
+- Extrema Expiry Bars: 45
+- Stuck Trade Bars: 6
+- Hedge Lot Multiplier: 6
+
+**Performance Metrics (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $510.13 |
+| Gross Profit | $1,033.91 |
+| Gross Loss | -$523.78 |
+| Profit Factor | 1.97 |
+| Recovery Factor | 2.87 |
+| Expected Payoff | $4.15 |
+| Sharpe Ratio | 2.80 |
+| AHPR | 1.0053 (0.53%) |
+| GHPR | 1.0050 (0.50%) |
+
+**Trade Statistics (2021-2025):**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 82% real ticks |
+| Total Bars | 4,436 |
+| Total Ticks | 107,013,176 |
+| Total Trades | 123 |
+| Total Deals | 246 |
+| Profit Trades | 66 (53.66%) |
+| Loss Trades | 57 (46.34%) |
+| Short Trades Won | 69.49% |
+| Long Trades Won | 39.06% |
+| Largest Profit Trade | $76.90 |
+| Largest Loss Trade | -$71.89 |
+| Average Profit Trade | $15.67 |
+| Average Loss Trade | -$9.19 |
+| Max Consecutive Wins | 4 ($32.75) |
+| Max Consecutive Losses | 3 (-$85.50) |
+
+**Drawdown Analysis (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Balance Drawdown Absolute | $0.00 |
+| Equity Drawdown Absolute | $14.91 |
+| Balance Drawdown Maximal | $85.50 (8.28%) |
+| Equity Drawdown Maximal | $177.46 (16.45%) |
+| Balance Drawdown Relative | 8.28% ($85.50) |
+| Equity Drawdown Relative | 16.45% ($177.46) |
+
+**Balance Sheet (2021-2025):**
+![RSI Extrema EURUSD Balance Sheet](RSIDivergenceExtremaEURUSD/test-balance.jpg)
 
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
