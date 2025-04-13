@@ -7,6 +7,9 @@
     - [2. EMA Crossover Skirmish](#2-ema-crossover-skirmish)
     - [3. RSI Divergence Extrema AUDUSD](#3-rsi-divergence-extrema-audusd)
     - [4. RSI Divergence Extrema EURUSD](#4-rsi-divergence-extrema-eurusd)
+    - [5. RSI Reversal Asian AUDUSD](#5-rsi-reversal-asian-audusd)
+    - [6. RSI Reversal Asian EURUSD](#6-rsi-reversal-asian-eurusd)
+    - [7. EMA Crossover BTC](#7-ema-crossover-btc)
   - [Technical Details](#technical-details)
   - [Requirements](#requirements)
   - [Installation](#installation)
@@ -287,6 +290,221 @@ A strategy that combines RSI divergence with extreme price points detection for 
 
 **Balance Sheet (2021-2025):**
 ![RSI Extrema EURUSD Balance Sheet](RSIDivergenceExtremaEURUSD/test-balance.jpg)
+
+### 5. RSI Reversal Asian AUDUSD
+
+A strategy specifically designed for the Asian session on AUDUSD, using RSI reversals with optimized parameters for this market condition.
+
+**Key Features:**
+- RSI reversal patterns detection
+- Asian session optimization
+- Dynamic exit based on RSI thresholds
+- Advanced position management
+- Session-based trading rules
+
+**Strategy Settings:**
+- Symbol: AUDUSD
+- Period: M15 (2021.01.01 - 2025.04.03)
+- RSI Period: 14
+- RSI Overbought: 67
+- RSI Oversold: 17
+- Take Profit: 253 pips
+- Stop Loss: 429 pips
+- Max Lot Size: 0.1
+- Max Spread: 1000
+- Max Duration: 81
+- RSI Exit Level: 49
+- Use Stop Loss: false
+- Use Take Profit: true
+- Use RSI Exit: true
+
+**Performance Metrics (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $1,521.11 |
+| Gross Profit | $6,147.84 |
+| Gross Loss | -$4,626.73 |
+| Profit Factor | 1.33 |
+| Recovery Factor | 4.30 |
+| Expected Payoff | $2.32 |
+| Sharpe Ratio | 2.14 |
+| AHPR | 1.0022 (0.22%) |
+| GHPR | 1.0019 (0.19%) |
+
+**Trade Statistics (2021-2025):**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 100% |
+| Total Bars | 105,824 |
+| Total Ticks | 6,215,660 |
+| Total Trades | 657 |
+| Total Deals | 1,314 |
+| Profit Trades | 491 (74.73%) |
+| Loss Trades | 166 (25.27%) |
+| Short Trades Won | 75.52% |
+| Long Trades Won | 61.11% |
+| Largest Profit Trade | $24.20 |
+| Largest Loss Trade | -$106.60 |
+| Average Profit Trade | $12.52 |
+| Average Loss Trade | -$27.87 |
+| Max Consecutive Wins | 17 ($266.30) |
+| Max Consecutive Losses | 4 (-$124.19) |
+
+**Drawdown Analysis (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Balance Drawdown Absolute | $158.27 |
+| Equity Drawdown Absolute | $189.77 |
+| Balance Drawdown Maximal | $302.68 (16.43%) |
+| Equity Drawdown Maximal | $353.92 (20.63%) |
+| Balance Drawdown Relative | 26.38% ($158.27) |
+| Equity Drawdown Relative | 31.97% ($192.77) |
+
+**Balance Sheet (2021-2025):**
+![RSI Reversal Asian Balance Sheet](RSIReversalAsianAUDUSD/test-balance.jpg)
+
+### 6. RSI Reversal Asian EURUSD
+
+A strategy specifically designed for the Asian session on EURUSD, using RSI reversals with optimized parameters for this market condition.
+
+**Key Features:**
+- RSI reversal patterns detection
+- Asian session optimization
+- Dynamic exit based on RSI thresholds
+- Advanced position management
+- Session-based trading rules
+
+**Strategy Settings:**
+- Symbol: EURUSD
+- Period: M15 (2021.01.01 - 2025.04.03)
+- RSI Period: 14
+- RSI Overbought: 77
+- RSI Oversold: 10
+- Take Profit: 116 pips
+- Stop Loss: 247 pips
+- Max Lot Size: 0.1
+- Max Spread: 1000
+- Max Duration: 67
+- RSI Exit Level: 40
+- Use Stop Loss: true
+- Use Take Profit: false
+- Use RSI Exit: true
+
+**Performance Metrics (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $955.26 |
+| Gross Profit | $1,961.62 |
+| Gross Loss | -$1,006.36 |
+| Profit Factor | 1.95 |
+| Recovery Factor | 6.70 |
+| Expected Payoff | $12.09 |
+| Sharpe Ratio | 6.99 |
+| AHPR | 1.0132 (1.32%) |
+| GHPR | 1.0121 (1.21%) |
+
+**Trade Statistics (2021-2025):**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 100% |
+| Total Bars | 105,824 |
+| Total Ticks | 6,218,391 |
+| Total Trades | 79 |
+| Total Deals | 158 |
+| Profit Trades | 40 (50.63%) |
+| Loss Trades | 39 (49.37%) |
+| Short Trades Won | 50.00% |
+| Long Trades Won | 100.00% |
+| Largest Profit Trade | $129.78 |
+| Largest Loss Trade | -$30.90 |
+| Average Profit Trade | $49.04 |
+| Average Loss Trade | -$25.80 |
+| Max Consecutive Wins | 5 ($223.98) |
+| Max Consecutive Losses | 3 (-$79.60) |
+
+**Drawdown Analysis (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Balance Drawdown Absolute | $0.00 |
+| Equity Drawdown Absolute | $2.51 |
+| Balance Drawdown Maximal | $113.91 (7.03%) |
+| Equity Drawdown Maximal | $142.61 (8.74%) |
+| Balance Drawdown Relative | 13.81% ($98.24) |
+| Equity Drawdown Relative | 16.97% ($122.14) |
+
+**Balance Sheet (2021-2025):**
+![RSI Reversal Asian EURUSD Balance Sheet](RSIReversalAsianEURUSD/test-balance.jpg)
+
+### 7. EMA Crossover BTC
+
+A strategy specifically designed for Bitcoin (BTCUSD) using EMA crossovers with advanced scoring and position management.
+
+**Key Features:**
+- EMA crossover detection
+- Advanced scoring system
+- Trailing stop management
+- Position scaling and reversal capabilities
+- Dynamic distance thresholds
+- Decay multiplier for trend strength
+
+**Strategy Settings:**
+- Symbol: BTCUSD
+- Period: H1 (2021.01.01 - 2025.04.03)
+- Magic Number: 42
+- Score Threshold: 15000
+- Slope Threshold: 3500
+- Max Score: 25000
+- Cooldown Minutes: 18
+- Trade Cooldown Minutes: 44
+- EMA Time Frame: 16385
+- Delay Clamp Absolute: 5000
+- EMA Period: 139
+- Cross Over Step: 2500
+- Slope Threshold Step: 2000
+- EMA Distance Step: 500
+- EMA Decay Step: 0
+- Decay Multiplier: 0.08
+- Distance Threshold: 7100
+- ATR Multiplier: 3.9
+- Trailing Stop: 10
+- Apply Trailing Stop: true
+- Max Crossover Trades: 14
+- Max Drawdown: 10%
+- Minimum Lot Size: 0.01
+- Max Time in Position: 1 hour
+- Trade Length Threshold: 31
+- Reverse TP: 707
+- Reverse Lot Size Multiplier: 4
+- Secondary Position Hold Time: 75
+
+**Performance Metrics (2021-2025):**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $632.96 |
+| Gross Profit | $849.93 |
+| Gross Loss | -$216.97 |
+| Profit Factor | 3.92 |
+| Recovery Factor | 7.47 |
+| Expected Payoff | $0.58 |
+| Sharpe Ratio | 7.57 |
+| AHPR | 1.0007 (0.07%) |
+| GHPR | 1.0007 (0.07%) |
+
+**Trade Statistics (2021-2025):**
+| Statistic | Value |
+|-----------|-------|
+| History Quality | 98% |
+| Total Bars | 35,791 |
+| Total Ticks | 8,380,510 |
+| Balance Drawdown Absolute | $0.00 |
+| Equity Drawdown Absolute | $2.72 |
+| Balance Drawdown Maximal | $41.94 (3.52%) |
+| Equity Drawdown Maximal | $84.72 (7.13%) |
+| Balance Drawdown Relative | 3.52% ($41.94) |
+| Equity Drawdown Relative | 7.13% ($84.72) |
+
+**Balance Sheet (2021-2025):**
+![EMA Crossover BTC Balance Sheet](EMACrossOverBTC/test-balance.jpg)
 
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
