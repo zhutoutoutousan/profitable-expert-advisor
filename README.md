@@ -10,6 +10,7 @@
     - [5. RSI Reversal Asian AUDUSD](#5-rsi-reversal-asian-audusd)
     - [6. RSI Reversal Asian EURUSD](#6-rsi-reversal-asian-eurusd)
     - [7. EMA Crossover BTC](#7-ema-crossover-btc)
+    - [8. Smart RSI BTC](#8-smart-rsi-btc)
   - [Technical Details](#technical-details)
   - [Requirements](#requirements)
   - [Installation](#installation)
@@ -505,6 +506,73 @@ A strategy specifically designed for Bitcoin (BTCUSD) using EMA crossovers with 
 
 **Balance Sheet (2021-2025):**
 ![EMA Crossover BTC Balance Sheet](EMACrossOverBTC/test-balance.jpg)
+
+
+### 8. Smart RSI BTC
+
+A strategy that implements a smart RSI-based trading system specifically optimized for Bitcoin trading.
+
+**Key Features:**
+- Advanced RSI-based entry and exit signals
+- Dynamic position sizing
+- Risk management through stop loss and take profit levels
+- Optimized for Bitcoin market conditions
+
+**Strategy Settings:**
+- Symbol: BTCUSD
+- Period: H1
+- RSI Period: 14
+- RSI Overbought: 70
+- RSI Oversold: 30
+- Base Lot Size: 0.01
+- Max Spread: 50
+- Max Risk Percent: 2%
+- Max Drawdown Percent: 10%
+- Max Consecutive Losses: 3
+- Max Lot Size: 0.1
+
+**Performance Metrics:**
+| Metric | Value |
+|--------|-------|
+| Total Net Profit | $1,344.74 |
+| Gross Profit | $4,410.51 |
+| Gross Loss | -$3,065.77 |
+| Profit Factor | 1.44 |
+| Recovery Factor | 4.91 |
+| Expected Payoff | $4.87 |
+| Sharpe Ratio | 1.69 |
+| AHPR | 1.0033 (0.33%) |
+| GHPR | 1.0031 (0.31%) |
+
+**Trade Statistics:**
+| Statistic | Value |
+|-----------|-------|
+| Total Trades | 276 |
+| Total Deals | 552 |
+| Profit Trades | 81 (29.35%) |
+| Loss Trades | 195 (70.65%) |
+| Short Trades Won | 26.28% |
+| Long Trades Won | 32.37% |
+| Largest Profit Trade | $144.46 |
+| Largest Loss Trade | -$46.66 |
+| Average Profit Trade | $54.45 |
+| Average Loss Trade | -$15.72 |
+| Max Consecutive Wins | 3 ($179.71) |
+| Max Consecutive Losses | 15 (-$159.89) |
+
+**Drawdown Analysis:**
+| Metric | Value |
+|--------|-------|
+| Balance Drawdown Absolute | $18.62 |
+| Equity Drawdown Absolute | $19.45 |
+| Balance Drawdown Maximal | $231.79 (10.21%) |
+| Equity Drawdown Maximal | $273.75 (11.93%) |
+| Balance Drawdown Relative | 13.47% ($210.14) |
+| Equity Drawdown Relative | 15.85% ($250.78) |
+
+**Balance Sheet:**
+![Smart RSI BTC Balance Sheet](SmartRSIBTC/test-balance.jpg)
+
 
 ## Technical Details
 Each EA is implemented in MQL5 and includes:
