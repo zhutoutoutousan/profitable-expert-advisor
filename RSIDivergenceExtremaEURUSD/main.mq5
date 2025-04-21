@@ -235,7 +235,7 @@ int OnInit()
    }
    
    // Initialize trade object
-   trade.SetExpertMagicNumber(123456);
+   trade.SetExpertMagicNumber(123457);
    
    Print("RSI Divergence Rebound Strategy Initialized");
    Print("RSI Period: ", RSI_Period);
