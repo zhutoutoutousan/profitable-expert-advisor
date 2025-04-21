@@ -13,17 +13,17 @@
 
 // Input parameters
 input int    RSIPeriod = 14;          // RSI period
-input double OverboughtLevel = 77;    // Overbought level
-input double OversoldLevel = 10;      // Oversold level
-input int    TakeProfitPips = 116;     // Take profit in pips
-input int    StopLossPips = 247;       // Stop loss in pips
-input double MaxLotSize = 0.05;        // Maximum lot size
+input double OverboughtLevel = 78;    // Overbought level
+input double OversoldLevel = 20;      // Oversold level
+input int    TakeProfitPips = 635;     // Take profit in pips
+input int    StopLossPips = 290;       // Stop loss in pips
+input double MaxLotSize = 0.1;        // Maximum lot size
 input int    MaxSpread = 1000;           // Maximum allowed spread in pips
-input int    MaxDuration = 67;         // Maximum trade duration in hours
+input int    MaxDuration = 22;         // Maximum trade duration in hours
 input bool   UseStopLoss = true;      // Use stop loss
 input bool   UseTakeProfit = false;    // Use take profit
 input bool   UseRSIExit = true;       // Use RSI for exit
-input double RSIExitLevel = 40;       // RSI level to exit (50 = neutral)
+input double RSIExitLevel = 57;       // RSI level to exit (50 = neutral)
 input bool   CloseOutsideSession = false; // Close trades outside Asian session
 input color  PanelBackground = clrBlack; // Panel background color
 input color  PanelText = clrWhite;    // Panel text color
@@ -219,6 +219,21 @@ bool CloseAllTrades(string reason = "")
     if(totalPositions == 0)
         return true;
         
+    // Check if there are any positions with our magic number
+    bool hasOurPositions = false;
+    for(int i = 0; i < totalPositions; i++)
+    {
+        if(PositionGetSymbol(i) == _Symbol && PositionGetInteger(POSITION_MAGIC) == 123457)
+        {
+            hasOurPositions = true;
+            break;
+        }
+    }
+    
+    // Return if no positions with our magic number
+    if(!hasOurPositions)
+        return true;
+
     Print("Attempting to close all positions", (reason != "" ? " - " + reason : ""));
     
     for(int i = totalPositions - 1; i >= 0; i--)
@@ -407,7 +422,7 @@ void OnTick()
             // Set trade parameters
             trade.SetDeviationInPoints(3);
             trade.SetTypeFilling(ORDER_FILLING_IOC);
-            trade.SetExpertMagicNumber(123456);
+            trade.SetExpertMagicNumber(123457);
             
             // Place buy order using CTrade
             if(!trade.Buy(MaxLotSize, _Symbol, currentAsk, sl, tp, "RSI Buy"))
@@ -437,7 +452,7 @@ void OnTick()
             // Set trade parameters
             trade.SetDeviationInPoints(3);
             trade.SetTypeFilling(ORDER_FILLING_IOC);
-            trade.SetExpertMagicNumber(123456);
+            trade.SetExpertMagicNumber(123457);
             
             // Place sell order using CTrade
             if(!trade.Sell(MaxLotSize, _Symbol, currentBid, sl, tp, "RSI Sell"))

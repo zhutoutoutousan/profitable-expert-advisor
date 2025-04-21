@@ -12,27 +12,27 @@
 
 // Input Parameters
 input group "General Settings"
-input ENUM_TIMEFRAMES InpTimeframe = PERIOD_CURRENT;  // Trading Timeframe
+input ENUM_TIMEFRAMES InpTimeframe = PERIOD_H1;  // Trading Timeframe
 input double InpLotSize = 0.01;               // Lot Size
 input int    InpMagicNumberRSIFollow = 1001; // Magic Number RSI Follow
 input int    InpMagicNumberRSIReverse = 1002;// Magic Number RSI Reverse
 input int    InpMagicNumberEMACross = 1003;  // Magic Number EMA Cross
 
 input group "Strategy Switches"
-input bool   InpEnableRSIFollow = false;      // Enable RSI Follow Strategy
+input bool   InpEnableRSIFollow = true;      // Enable RSI Follow Strategy
 input bool   InpEnableRSIReverse = true;     // Enable RSI Reverse Strategy
-input bool   InpEnableEMACross = false;       // Enable EMA Cross Strategy
+input bool   InpEnableEMACross = true;       // Enable EMA Cross Strategy
 input bool   InpEnableStrategyLock = false;   // Enable Strategy Lock
 input double InpLockProfitThreshold = 0.0;   // Lock Profit Threshold (pips)
 input bool   InpCloseOppositeTrades = false;  // Close Opposite Trades When Profiting
 
 input group "RSI Follow Strategy"
-input int    InpRSIPeriod = 14;              // RSI Period
-input int    InpRSIOverbought = 70;          // RSI Overbought Level
-input int    InpRSIOversold = 30;            // RSI Oversold Level
-input int    InpRSIExitLevel = 50;           // RSI Exit Level
+input int    InpRSIPeriod = 87;              // RSI Period
+input int    InpRSIOverbought = 72;          // RSI Overbought Level
+input int    InpRSIOversold = 50;            // RSI Oversold Level
+input int    InpRSIExitLevel = 40;           // RSI Exit Level
 input int    InpRSIFollowStartHour = 0;      // RSI Follow Start Hour (0-23)
-input int    InpRSIFollowEndHour = 23;       // RSI Follow End Hour (0-23)
+input int    InpRSIFollowEndHour = 7;       // RSI Follow End Hour (0-23)
 input bool   InpRSIFollowCloseOutsideHours = true; // Close trades outside trading hours
 
 input group "RSI Reverse Strategy"
@@ -48,13 +48,13 @@ input int    InpRSIReverseCooldownBars = 15;  // RSI Reverse Cooldown (bars)
 input bool   InpRSIReverseCooldownOnLoss = true; // Apply cooldown only on loss
 
 input group "EMA Cross Strategy"
-input int    InpEMAPeriod = 20;              // EMA Period
-input int    InpEMACrossStartHour = 0;       // EMA Cross Start Hour (0-23)
-input int    InpEMACrossEndHour = 23;        // EMA Cross End Hour (0-23)
+input int    InpEMAPeriod = 120;              // EMA Period
+input int    InpEMACrossStartHour = 8;       // EMA Cross Start Hour (0-23)
+input int    InpEMACrossEndHour = 14;        // EMA Cross End Hour (0-23)
 input bool   InpEMACrossCloseOutsideHours = true; // Close trades outside trading hours
-input bool   InpUseEMADistanceEntry = false; // Use EMA Distance Entry
-input double InpEMADistancePips = 10.0;      // EMA Distance Threshold (pips)
-input int    InpEMADistancePeriod = 3;       // EMA Distance Period (bars)
+input bool   InpUseEMADistanceEntry = true; // Use EMA Distance Entry
+input double InpEMADistancePips = 160.0;      // EMA Distance Threshold (pips)
+input int    InpEMADistancePeriod = 26;       // EMA Distance Period (bars)
 
 // Global Variables
 int rsiHandle;
