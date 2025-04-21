@@ -12,16 +12,16 @@
 #include <Trade\Trade.mqh>
 
 // Input parameters
-input int    RSIPeriod = 14;          // RSI period
-input double OverboughtLevel = 67;    // Overbought level
-input double OversoldLevel = 17;      // Oversold level
-input int    TakeProfitPips = 253;     // Take profit in pips
-input int    StopLossPips = 429;       // Stop loss in pips
+input int    RSIPeriod = 28;          // RSI period
+input double OverboughtLevel = 64;    // Overbought level
+input double OversoldLevel = 13;      // Oversold level
+input int    TakeProfitPips = 175;     // Take profit in pips
+input int    StopLossPips = 5;       // Stop loss in pips
 input double MaxLotSize = 0.1;        // Maximum lot size
 input int    MaxSpread = 1000;           // Maximum allowed spread in pips
-input int    MaxDuration = 81;         // Maximum trade duration in hours
+input int    MaxDuration = 140;         // Maximum trade duration in hours
 input bool   UseStopLoss = false;      // Use stop loss
-input bool   UseTakeProfit = true;    // Use take profit
+input bool   UseTakeProfit = false;    // Use take profit
 input bool   UseRSIExit = true;       // Use RSI for exit
 input double RSIExitLevel = 49;       // RSI level to exit (50 = neutral)
 input bool   CloseOutsideSession = false; // Close trades outside Asian session
@@ -221,6 +221,17 @@ bool CloseAllTrades(string reason = "")
         
     Print("Attempting to close all positions", (reason != "" ? " - " + reason : ""));
     
+    // Check if there are any positions with our magic number
+    bool hasOurPositions = false;
+    for(int i = 0; i < totalPositions; i++)
+    {
+        if(PositionGetSymbol(i) == _Symbol && PositionGetInteger(POSITION_MAGIC) == 123456)
+        {
+            hasOurPositions = true;
+            break;
+        }
+    }
+
     for(int i = totalPositions - 1; i >= 0; i--)
     {
         if(PositionGetSymbol(i) == _Symbol)
