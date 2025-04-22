@@ -7,6 +7,7 @@
     - [2. RSI MidPoint Hijack XAU/USD](#2-rsi-midpoint-hijack-xauusd)
     - [3. RSI Reversal Asian EUR/USD](#3-rsi-reversal-asian-eurusd)
     - [4. RSI CrossOver Reversal XAU/USD](#4-rsi-crossover-reversal-xauusd)
+    - [5. RSI Follow Reverse EMA CrossOver BTC/USD](#5-rsi-follow-reverse-ema-crossover-btcusd)
   - [Strategy Rationale](#strategy-rationale)
     - [RSI Reversal Strategy](#rsi-reversal-strategy)
     - [RSI MidPoint Hijack Strategy](#rsi-midpoint-hijack-strategy)
@@ -139,6 +140,47 @@ TrailingStop = 295;       // Trailing stop in pips
 **Test Balance Results:**
 <div align="center">
   <img src="RSICrossOverReversalXAUUSD/test-balance.jpg" alt="RSI CrossOver Reversal XAU/USD Test Balance" width="600"/>
+</div>
+
+### 5. RSI Follow Reverse EMA CrossOver BTC/USD
+- **Strategy**: Multi-strategy approach combining RSI Follow, RSI Reverse, and EMA crossovers
+- **Key Features**:
+  - Implements three distinct strategies:
+    1. RSI Follow Strategy
+    2. RSI Reverse Strategy
+    3. EMA Cross Strategy
+  - Optimized for Bitcoin (BTC/USD) trading
+  - Includes strategy locking mechanism to protect profits
+  - Features cooldown periods after losses
+  - Time-based trading windows for each strategy
+  - Adaptive position sizing based on volatility
+
+**Core Parameters:**
+```mql5
+// RSI Follow Strategy
+InpRSIPeriod = 14;              // RSI Period
+InpRSIOverbought = 70;          // RSI Overbought Level
+InpRSIOversold = 30;            // RSI Oversold Level
+
+// RSI Reverse Strategy
+InpRSIReversePeriod = 14;       // RSI Period
+InpRSIReverseOverbought = 80;   // RSI Overbought Level
+InpRSIReverseOversold = 20;     // RSI Oversold Level
+
+// EMA Settings
+InpEMAPeriod = 200;             // EMA Period
+InpEMASlopeThreshold = 0.1;     // EMA Slope Threshold
+InpEMADistanceThreshold = 100;  // EMA Distance Threshold
+
+// Strategy Management
+InpEnableStrategyLock = true;    // Enable Strategy Lock
+InpLockProfitThreshold = 1000;  // Lock Profit Threshold (pips)
+InpCooldownPeriod = 24;         // Cooldown Period in hours
+```
+
+**Test Balance Results:**
+<div align="center">
+  <img src="RSIFollowReverseEMACrossOverBTCUSD/test-balance.jpg" alt="RSI Follow Reverse EMA CrossOver BTC/USD Test Balance" width="600"/>
 </div>
 
 ## Strategy Rationale
