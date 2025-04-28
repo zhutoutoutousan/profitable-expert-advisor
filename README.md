@@ -8,6 +8,7 @@
     - [3. RSI Reversal Asian EUR/USD](#3-rsi-reversal-asian-eurusd)
     - [4. RSI CrossOver Reversal XAU/USD](#4-rsi-crossover-reversal-xauusd)
     - [5. RSI Follow Reverse EMA CrossOver BTC/USD](#5-rsi-follow-reverse-ema-crossover-btcusd)
+    - [6. DarvasBoxXAUUSD](#6-darvasboxxauusd)
   - [Strategy Rationale](#strategy-rationale)
     - [RSI Reversal Strategy](#rsi-reversal-strategy)
     - [RSI MidPoint Hijack Strategy](#rsi-midpoint-hijack-strategy)
@@ -181,6 +182,41 @@ InpCooldownPeriod = 24;         // Cooldown Period in hours
 **Test Balance Results:**
 <div align="center">
   <img src="RSIFollowReverseEMACrossOverBTCUSD/test-balance.jpg" alt="RSI Follow Reverse EMA CrossOver BTC/USD Test Balance" width="600"/>
+</div>
+
+### 6. DarvasBoxXAUUSD
+- **Strategy**: Darvas Box breakout strategy for Gold trading
+- **Key Features**:
+  - Implements the classic Darvas Box theory for trend identification
+  - Specifically optimized for Gold (XAU/USD) trading
+  - Features dynamic box size adjustment based on volatility
+  - Includes multiple timeframe analysis
+  - Implements strict risk management with configurable stop loss and take profit
+  - Features a visual panel showing real-time box levels and trading metrics
+
+**Core Parameters:**
+```mql5
+// Box Settings
+BoxPeriod = 20;          // Box formation period
+MinBoxSize = 50;         // Minimum box size in pips
+MaxBoxSize = 200;        // Maximum box size in pips
+VolatilityFactor = 1.5;  // Volatility adjustment factor
+
+// Risk Management
+TakeProfitPips = 300;    // Take profit in pips
+StopLossPips = 150;      // Stop loss in pips
+MaxLotSize = 0.1;        // Maximum lot size
+MaxSpread = 1000;        // Maximum allowed spread in pips
+MaxDuration = 48;        // Maximum trade duration in hours
+
+// Timeframe Settings
+PrimaryTF = PERIOD_H1;   // Primary timeframe
+SecondaryTF = PERIOD_H4; // Secondary timeframe for confirmation
+```
+
+**Test Balance Results:**
+<div align="center">
+  <img src="DarvasBoxXAUUSD/test-balance.jpg" alt="Darvas Box XAU/USD Test Balance" width="600"/>
 </div>
 
 ## Strategy Rationale
