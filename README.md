@@ -9,9 +9,13 @@
     - [4. RSI CrossOver Reversal XAU/USD](#4-rsi-crossover-reversal-xauusd)
     - [5. RSI Follow Reverse EMA CrossOver BTC/USD](#5-rsi-follow-reverse-ema-crossover-btcusd)
     - [6. DarvasBoxXAUUSD](#6-darvasboxxauusd)
+    - [7. EMASlopeDistanceCocktailXAUUSD](#7-emaslopedistancecocktailxauusd)
   - [Strategy Rationale](#strategy-rationale)
     - [RSI Reversal Strategy](#rsi-reversal-strategy)
     - [RSI MidPoint Hijack Strategy](#rsi-midpoint-hijack-strategy)
+    - [RSI CrossOver Reversal Strategy](#rsi-crossover-reversal-strategy)
+    - [Darvas Box Strategy](#darvas-box-strategy)
+    - [EMA Slope Distance Cocktail Strategy](#ema-slope-distance-cocktail-strategy)
   - [Profitability Factors](#profitability-factors)
   - [Usage](#usage)
   - [Disclaimer](#disclaimer)
@@ -219,6 +223,54 @@ SecondaryTF = PERIOD_H4; // Secondary timeframe for confirmation
   <img src="DarvasBoxXAUUSD/test-balance.jpg" alt="Darvas Box XAU/USD Test Balance" width="600"/>
 </div>
 
+### 7. EMASlopeDistanceCocktailXAUUSD
+- **Strategy**: Advanced EMA-based strategy combining slope and distance analysis
+- **Key Features**:
+  - Uses EMA slope and price distance for entry signals
+  - Implements a sophisticated scoring system
+  - Dynamic stop loss and take profit based on ATR
+  - Trailing stop functionality
+  - Cooldown periods to prevent over-trading
+  - Maximum drawdown protection
+  - Time-based position management
+
+**Core Parameters:**
+```mql5
+// EMA Settings
+emaPeriod = 64;              // EMA period
+emaTimeFrame = PERIOD_H1;    // EMA Timeframe
+slopeThreshold = 82;         // EMA slope threshold
+distanceThreshold = 17.5;    // Distance threshold
+
+// Risk Management
+atrMultiplier = 7.6;        // ATR multiplier for SL/TP
+TrailingStop = 335;         // Trailing stop in points
+max_drawdown = 0.1;         // Maximum drawdown percentage
+minimumLotSize = 0.03;      // Minimum lot size
+maxTimeInPosition = 2;      // Maximum time in position (hours)
+
+// Strategy Control
+scoreThreshold = 5200;      // Score threshold for trade entry
+maxScore = 7900;            // Maximum score value
+cooldownMinutes = 18;       // Cooldown period
+tradeCooldownMinutes = 19;  // Trade debounce period
+```
+
+**Performance Metrics:**
+- Yearly return: 28%
+- Profit Factor: 1.222
+- Recovery Factor: 7.17
+- Expected Payoff: 1.3
+- Sharpe Ratio: 4.11
+- Maximum Drawdown: 14.00%
+- Win Rate: 64.65%
+- Total Trades: 2863
+
+**Test Balance Results:**
+<div align="center">
+  <img src="EMASlopeDistanceCocktailXAUUSD/test-balance.jpg" alt="EMA Slope Distance Cocktail XAU/USD Test Balance" width="600"/>
+</div>
+
 ## Strategy Rationale
 
 ### RSI Reversal Strategy
@@ -235,6 +287,43 @@ This advanced strategy combines multiple approaches:
 - EMA Cross: Provides additional confirmation signals
 - Strategy locking: Protects profits during favorable conditions
 - Cooldown periods: Prevents over-trading after losses
+
+### RSI CrossOver Reversal Strategy
+This strategy focuses on RSI crossover signals:
+- Uses RSI crossovers as primary entry signals
+- Combines with EMA for trend confirmation
+- Implements multiple timeframe analysis
+- Optimized for Gold market volatility
+- Features dynamic stop loss and take profit levels
+
+### Darvas Box Strategy
+The Darvas Box strategy is based on Nicolas Darvas' box theory:
+- Identifies consolidation periods as "boxes"
+- Trades breakouts from these boxes
+- Uses dynamic box sizing based on volatility
+- Implements multiple timeframe confirmation
+- Features strict risk management rules
+
+### EMA Slope Distance Cocktail Strategy
+This sophisticated strategy combines multiple technical elements:
+- EMA Slope Analysis:
+  - Monitors the rate of change in EMA
+  - Uses slope thresholds for trend confirmation
+  - Implements slope-based scoring system
+- Distance Analysis:
+  - Measures price distance from EMA
+  - Uses distance thresholds for entry signals
+  - Implements mean reversion principles
+- Advanced Risk Management:
+  - Dynamic ATR-based stop losses
+  - Trailing stop functionality
+  - Maximum drawdown protection
+  - Time-based position management
+- Scoring System:
+  - Combines multiple factors into a single score
+  - Uses thresholds for trade entry/exit
+  - Implements cooldown periods
+  - Features maximum score clamping
 
 ## Profitability Factors
 
