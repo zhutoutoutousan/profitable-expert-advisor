@@ -27,13 +27,13 @@ input double InpLockProfitThreshold = 0.0;   // Lock Profit Threshold (pips)
 input bool   InpCloseOppositeTrades = false;  // Close Opposite Trades When Profiting
 
 input group "RSI Follow Strategy"
-input int    InpRSIPeriod = 87;              // RSI Period
-input int    InpRSIOverbought = 72;          // RSI Overbought Level
-input int    InpRSIOversold = 50;            // RSI Oversold Level
-input int    InpRSIExitLevel = 40;           // RSI Exit Level
-input int    InpRSIFollowStartHour = 0;      // RSI Follow Start Hour (0-23)
-input int    InpRSIFollowEndHour = 7;       // RSI Follow End Hour (0-23)
-input bool   InpRSIFollowCloseOutsideHours = true; // Close trades outside trading hours
+input int    InpRSIPeriod = 32;              // RSI Period
+input int    InpRSIOverbought = 78;          // RSI Overbought Level
+input int    InpRSIOversold = 46;            // RSI Oversold Level
+input int    InpRSIExitLevel = 44;           // RSI Exit Level
+input int    InpRSIFollowStartHour = 23;      // RSI Follow Start Hour (0-23)
+input int    InpRSIFollowEndHour = 8;       // RSI Follow End Hour (0-23)
+input bool   InpRSIFollowCloseOutsideHours = false; // Close trades outside trading hours
 
 input group "RSI Reverse Strategy"
 input int    InpRSIReversePeriod = 59;       // RSI Period
@@ -72,6 +72,12 @@ int emaCrossSignalBar = 0;
 datetime lastBarTime = 0;
 datetime rsiReverseLastCloseTime = 0;
 bool rsiReverseInCooldown = false;
+double lastBarRSI = 0;  // Store last bar's RSI value
+double lastBarRSIReverse = 0;  // Store last bar's RSI Reverse value
+double lastBarEMA = 0;  // Store last bar's EMA value
+double lastBarClose = 0;  // Store last bar's close value
+double lastBarEMAPrev = 0;  // Store previous bar's EMA value
+double lastBarClosePrev = 0;  // Store previous bar's close value
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -224,20 +230,14 @@ void CheckRSIFollowStrategy()
     if(InpEnableStrategyLock && HasProfitablePosition(InpMagicNumberRSIFollow))
         return;
     
-    double rsi[];
-    ArraySetAsSeries(rsi, true);
-    CopyBuffer(rsiHandle, 0, 0, 3, rsi);
-    
-    if(ArraySize(rsi) < 3) return;
-    
-    // Check for overbought condition
-    if(rsi[1] > InpRSIOverbought)
+    // Use lastBarRSI instead of copying buffer
+    if(lastBarRSI > InpRSIOverbought)
         rsiOverbought = true;
-    else if(rsi[1] < InpRSIOversold)
+    else if(lastBarRSI < InpRSIOversold)
         rsiOversold = true;
     
     // Check for entry signals
-    if(rsiOverbought && rsi[1] < rsi[0] && rsi[1] < InpRSIExitLevel)
+    if(rsiOverbought && lastBarRSI < InpRSIExitLevel)
     {
         // Sell signal
         if(!HasPosition(InpMagicNumberRSIFollow))
@@ -247,7 +247,7 @@ void CheckRSIFollowStrategy()
         }
         rsiOverbought = false;
     }
-    else if(rsiOversold && rsi[1] > rsi[0] && rsi[1] > InpRSIExitLevel)
+    else if(rsiOversold && lastBarRSI > InpRSIExitLevel)
     {
         // Buy signal
         if(!HasPosition(InpMagicNumberRSIFollow))
@@ -312,20 +312,14 @@ void CheckRSIReverseStrategy()
     if(IsRSIReverseInCooldown())
         return;
     
-    double rsi[];
-    ArraySetAsSeries(rsi, true);
-    CopyBuffer(rsiReverseHandle, 0, 0, 3, rsi);
-    
-    if(ArraySize(rsi) < 3) return;
-    
-    // Check for overbought/oversold conditions
-    if(rsi[1] > InpRSIReverseOverbought)
+    // Use lastBarRSIReverse instead of copying buffer
+    if(lastBarRSIReverse > InpRSIReverseOverbought)
         rsiReverseOverbought = true;
-    else if(rsi[1] < InpRSIReverseOversold)
+    else if(lastBarRSIReverse < InpRSIReverseOversold)
         rsiReverseOversold = true;
     
     // Check for entry signals
-    if(rsiReverseOverbought && rsi[1] < InpRSIReverseCrossLevel)
+    if(rsiReverseOverbought && lastBarRSIReverse < InpRSIReverseCrossLevel)
     {
         // Sell signal
         if(!HasPosition(InpMagicNumberRSIReverse))
@@ -335,7 +329,7 @@ void CheckRSIReverseStrategy()
         }
         rsiReverseOverbought = false;
     }
-    else if(rsiReverseOversold && rsi[1] > InpRSIReverseCrossLevel)
+    else if(rsiReverseOversold && lastBarRSIReverse > InpRSIReverseCrossLevel)
     {
         // Buy signal
         if(!HasPosition(InpMagicNumberRSIReverse))
@@ -369,24 +363,15 @@ void CheckEMACrossStrategy()
     if(InpEnableStrategyLock && HasProfitablePosition(InpMagicNumberEMACross))
         return;
     
-    double ema[], close[];
-    ArraySetAsSeries(ema, true);
-    ArraySetAsSeries(close, true);
-    
-    CopyBuffer(emaHandle, 0, 0, InpEMADistancePeriod + 2, ema);
-    CopyClose(_Symbol, InpTimeframe, 0, InpEMADistancePeriod + 2, close);
-    
-    if(ArraySize(ema) < InpEMADistancePeriod + 2 || ArraySize(close) < InpEMADistancePeriod + 2) return;
-    
-    // Check for cross signals
-    if(ema[1] < close[1] && ema[0] > close[0])
+    // Check for cross signals using stored values
+    if(lastBarEMAPrev < lastBarClosePrev && lastBarEMA > lastBarClose)
     {
         // Buy cross signal
         emaCrossBuySignal = true;
         emaCrossSellSignal = false;
         emaCrossSignalBar = 0;
     }
-    else if(ema[1] > close[1] && ema[0] < close[0])
+    else if(lastBarEMAPrev > lastBarClosePrev && lastBarEMA < lastBarClose)
     {
         // Sell cross signal
         emaCrossSellSignal = true;
@@ -401,49 +386,65 @@ void CheckEMACrossStrategy()
         {
             // Check if price has moved above EMA by the required distance for the required period
             bool distanceConditionMet = true;
-            for(int i = 0; i < InpEMADistancePeriod; i++)
-            {
-                double distance = (close[i] - ema[i]) / _Point;
-                if(distance < InpEMADistancePips)
-                {
-                    distanceConditionMet = false;
-                    break;
-                }
-            }
+            double emaHistory[], closeHistory[];
+            ArraySetAsSeries(emaHistory, true);
+            ArraySetAsSeries(closeHistory, true);
             
-            if(distanceConditionMet && !HasPosition(InpMagicNumberEMACross))
+            if(CopyBuffer(emaHandle, 0, 0, InpEMADistancePeriod, emaHistory) > 0 &&
+               CopyClose(_Symbol, InpTimeframe, 0, InpEMADistancePeriod, closeHistory) > 0)
             {
-                trade.SetExpertMagicNumber(InpMagicNumberEMACross);
-                trade.Buy(InpLotSize, _Symbol, 0, 0, 0, "EMA Cross Distance");
-                emaCrossBuySignal = false;
+                for(int i = 0; i < InpEMADistancePeriod; i++)
+                {
+                    double distance = (closeHistory[i] - emaHistory[i]) / _Point;
+                    if(distance < InpEMADistancePips)
+                    {
+                        distanceConditionMet = false;
+                        break;
+                    }
+                }
+                
+                if(distanceConditionMet && !HasPosition(InpMagicNumberEMACross))
+                {
+                    trade.SetExpertMagicNumber(InpMagicNumberEMACross);
+                    trade.Buy(InpLotSize, _Symbol, 0, 0, 0, "EMA Cross Distance");
+                    emaCrossBuySignal = false;
+                }
             }
         }
         else if(emaCrossSellSignal)
         {
             // Check if price has moved below EMA by the required distance for the required period
             bool distanceConditionMet = true;
-            for(int i = 0; i < InpEMADistancePeriod; i++)
-            {
-                double distance = (ema[i] - close[i]) / _Point;
-                if(distance < InpEMADistancePips)
-                {
-                    distanceConditionMet = false;
-                    break;
-                }
-            }
+            double emaHistory[], closeHistory[];
+            ArraySetAsSeries(emaHistory, true);
+            ArraySetAsSeries(closeHistory, true);
             
-            if(distanceConditionMet && !HasPosition(InpMagicNumberEMACross))
+            if(CopyBuffer(emaHandle, 0, 0, InpEMADistancePeriod, emaHistory) > 0 &&
+               CopyClose(_Symbol, InpTimeframe, 0, InpEMADistancePeriod, closeHistory) > 0)
             {
-                trade.SetExpertMagicNumber(InpMagicNumberEMACross);
-                trade.Sell(InpLotSize, _Symbol, 0, 0, 0, "EMA Cross Distance");
-                emaCrossSellSignal = false;
+                for(int i = 0; i < InpEMADistancePeriod; i++)
+                {
+                    double distance = (emaHistory[i] - closeHistory[i]) / _Point;
+                    if(distance < InpEMADistancePips)
+                    {
+                        distanceConditionMet = false;
+                        break;
+                    }
+                }
+                
+                if(distanceConditionMet && !HasPosition(InpMagicNumberEMACross))
+                {
+                    trade.SetExpertMagicNumber(InpMagicNumberEMACross);
+                    trade.Sell(InpLotSize, _Symbol, 0, 0, 0, "EMA Cross Distance");
+                    emaCrossSellSignal = false;
+                }
             }
         }
     }
     else
     {
-        // Original cross entry logic
-        if(ema[1] < close[1] && ema[0] > close[0])
+        // Original cross entry logic using stored values
+        if(lastBarEMAPrev < lastBarClosePrev && lastBarEMA > lastBarClose)
         {
             // Buy signal
             if(!HasPosition(InpMagicNumberEMACross))
@@ -452,7 +453,7 @@ void CheckEMACrossStrategy()
                 trade.Buy(InpLotSize, _Symbol, 0, 0, 0, "EMA Cross");
             }
         }
-        else if(ema[1] > close[1] && ema[0] < close[0])
+        else if(lastBarEMAPrev > lastBarClosePrev && lastBarEMA < lastBarClose)
         {
             // Sell signal
             if(!HasPosition(InpMagicNumberEMACross))
@@ -485,6 +486,30 @@ void OnTick()
     if(!IsNewBar())
         return;
         
+    // Get indicator values for the new bar
+    double rsi[], rsiReverse[], ema[], close[];
+    ArraySetAsSeries(rsi, true);
+    ArraySetAsSeries(rsiReverse, true);
+    ArraySetAsSeries(ema, true);
+    ArraySetAsSeries(close, true);
+    
+    // Store previous values
+    lastBarEMAPrev = lastBarEMA;
+    lastBarClosePrev = lastBarClose;
+    
+    // Get new values
+    if(CopyBuffer(rsiHandle, 0, 0, 1, rsi) > 0)
+        lastBarRSI = rsi[0];
+        
+    if(CopyBuffer(rsiReverseHandle, 0, 0, 1, rsiReverse) > 0)
+        lastBarRSIReverse = rsiReverse[0];
+        
+    if(CopyBuffer(emaHandle, 0, 0, 1, ema) > 0)
+        lastBarEMA = ema[0];
+        
+    if(CopyClose(_Symbol, InpTimeframe, 0, 1, close) > 0)
+        lastBarClose = close[0];
+        
     // Check for new signals
     if(InpEnableRSIFollow)
         CheckRSIFollowStrategy();
@@ -502,20 +527,13 @@ void OnTick()
 //+------------------------------------------------------------------+
 void CheckExitConditions()
 {
-    double rsi[], rsiReverse[], ema[], close[];
-    ArraySetAsSeries(rsi, true);
-    ArraySetAsSeries(rsiReverse, true);
-    ArraySetAsSeries(ema, true);
-    ArraySetAsSeries(close, true);
-    
     if(InpEnableRSIFollow)
     {
-        CopyBuffer(rsiHandle, 0, 0, 1, rsi);
         // Check RSI Follow exit conditions
         if(HasPosition(InpMagicNumberRSIFollow))
         {
-            if((positionInfo.PositionType() == POSITION_TYPE_BUY && rsi[0] < InpRSIExitLevel) ||
-               (positionInfo.PositionType() == POSITION_TYPE_SELL && rsi[0] > InpRSIExitLevel))
+            if((positionInfo.PositionType() == POSITION_TYPE_BUY && lastBarRSI < InpRSIExitLevel) ||
+               (positionInfo.PositionType() == POSITION_TYPE_SELL && lastBarRSI > InpRSIExitLevel))
             {
                 ClosePosition(InpMagicNumberRSIFollow);
             }
@@ -524,12 +542,11 @@ void CheckExitConditions()
     
     if(InpEnableRSIReverse)
     {
-        CopyBuffer(rsiReverseHandle, 0, 0, 1, rsiReverse);
         // Check RSI Reverse exit conditions
         if(HasPosition(InpMagicNumberRSIReverse))
         {
-            if((positionInfo.PositionType() == POSITION_TYPE_BUY && rsiReverse[0] < InpRSIReverseExitLevel) ||
-               (positionInfo.PositionType() == POSITION_TYPE_SELL && rsiReverse[0] > InpRSIReverseExitLevel))
+            if((positionInfo.PositionType() == POSITION_TYPE_BUY && lastBarRSIReverse < InpRSIReverseExitLevel) ||
+               (positionInfo.PositionType() == POSITION_TYPE_SELL && lastBarRSIReverse > InpRSIReverseExitLevel))
             {
                 ClosePosition(InpMagicNumberRSIReverse);
             }
@@ -538,13 +555,11 @@ void CheckExitConditions()
     
     if(InpEnableEMACross)
     {
-        CopyBuffer(emaHandle, 0, 0, 2, ema);
-        CopyClose(_Symbol, InpTimeframe, 0, 2, close);
-        // Check EMA Cross exit conditions
+        // Check EMA Cross exit conditions using stored values
         if(HasPosition(InpMagicNumberEMACross))
         {
-            if((positionInfo.PositionType() == POSITION_TYPE_BUY && ema[0] > close[0]) ||
-               (positionInfo.PositionType() == POSITION_TYPE_SELL && ema[0] < close[0]))
+            if((positionInfo.PositionType() == POSITION_TYPE_BUY && lastBarEMA > lastBarClose) ||
+               (positionInfo.PositionType() == POSITION_TYPE_SELL && lastBarEMA < lastBarClose))
             {
                 ClosePosition(InpMagicNumberEMACross);
             }
