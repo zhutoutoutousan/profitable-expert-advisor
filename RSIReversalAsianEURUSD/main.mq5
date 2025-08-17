@@ -12,18 +12,18 @@
 #include <Trade\Trade.mqh>
 
 // Input parameters
-input int    RSIPeriod = 14;          // RSI period
-input double OverboughtLevel = 78;    // Overbought level
-input double OversoldLevel = 20;      // Oversold level
-input int    TakeProfitPips = 635;     // Take profit in pips
-input int    StopLossPips = 290;       // Stop loss in pips
+input int    RSIPeriod = 28;          // RSI period
+input double OverboughtLevel = 60;    // Overbought level
+input double OversoldLevel = 8;      // Oversold level
+input int    TakeProfitPips = 175;     // Take profit in pips
+input int    StopLossPips = 5;       // Stop loss in pips
 input double MaxLotSize = 0.1;        // Maximum lot size
 input int    MaxSpread = 1000;           // Maximum allowed spread in pips
-input int    MaxDuration = 22;         // Maximum trade duration in hours
-input bool   UseStopLoss = true;      // Use stop loss
+input int    MaxDuration = 270;         // Maximum trade duration in hours
+input bool   UseStopLoss = false;      // Use stop loss
 input bool   UseTakeProfit = false;    // Use take profit
 input bool   UseRSIExit = true;       // Use RSI for exit
-input double RSIExitLevel = 57;       // RSI level to exit (50 = neutral)
+input double RSIExitLevel = 55;       // RSI level to exit (50 = neutral)
 input bool   CloseOutsideSession = false; // Close trades outside Asian session
 input color  PanelBackground = clrBlack; // Panel background color
 input color  PanelText = clrWhite;    // Panel text color
@@ -38,6 +38,14 @@ double positionOpenPrice = 0;
 datetime positionOpenTime = 0;
 ENUM_POSITION_TYPE lastPositionType = POSITION_TYPE_BUY;
 bool sessionCloseAttempted = false;  // Track if we've attempted to close positions for current session
+
+// RSI crossover variables
+double rsiCurrent = 0;
+double rsiPrevious = 0;
+double rsiPrevious2 = 0;
+bool rsiCrossedOverbought = false;
+bool rsiCrossedOversold = false;
+bool rsiCrossedExitLevel = false;
 
 // Panel objects
 string panelName = "RSIPanel";
@@ -89,6 +97,7 @@ void CreatePanel()
     CreateScoreLabel("Session", "Session: ", 3);
     CreateScoreLabel("SL", "Stop Loss: ", 4);
     CreateScoreLabel("TP", "Take Profit: ", 5);
+    CreateScoreLabel("Cross", "Cross: ", 6);
 }
 
 //+------------------------------------------------------------------+
@@ -108,7 +117,7 @@ void CreateScoreLabel(string name, string text, int index)
 //+------------------------------------------------------------------+
 //| Update panel values                                               |
 //+------------------------------------------------------------------+
-void UpdatePanel(double rsi, string position, int spread, string session, double sl, double tp)
+void UpdatePanel(double rsi, string position, int spread, string session, double sl, double tp, string crossInfo)
 {
     ObjectSetString(0, panelName + "RSI", OBJPROP_TEXT, "RSI: " + DoubleToString(rsi, 2));
     ObjectSetString(0, panelName + "Position", OBJPROP_TEXT, "Position: " + position);
@@ -116,6 +125,7 @@ void UpdatePanel(double rsi, string position, int spread, string session, double
     ObjectSetString(0, panelName + "Session", OBJPROP_TEXT, "Session: " + session);
     ObjectSetString(0, panelName + "SL", OBJPROP_TEXT, "Stop Loss: " + IntegerToString(StopLossPips) + " pips");
     ObjectSetString(0, panelName + "TP", OBJPROP_TEXT, "Take Profit: " + IntegerToString(TakeProfitPips) + " pips");
+    ObjectSetString(0, panelName + "Cross", OBJPROP_TEXT, "Cross: " + crossInfo);
 }
 
 //+------------------------------------------------------------------+
@@ -157,18 +167,49 @@ bool IsTradingAllowed()
     // Check if market is open
     if(!SymbolInfoInteger(_Symbol, SYMBOL_TRADE_MODE) == SYMBOL_TRADE_MODE_FULL)
     {
-        Print("Trading is not allowed for ", _Symbol);
         return false;
     }
     
     // Check if we have enough money
     if(AccountInfoDouble(ACCOUNT_MARGIN_FREE) <= 0)
     {
-        Print("Not enough free margin");
         return false;
     }
     
     return true;
+}
+
+//+------------------------------------------------------------------+
+//| Check RSI crossover conditions                                    |
+//+------------------------------------------------------------------+
+void CheckRSICrossover()
+{
+    // Reset crossover flags
+    rsiCrossedOverbought = false;
+    rsiCrossedOversold = false;
+    rsiCrossedExitLevel = false;
+    
+    // Check for overbought crossover (RSI crosses above overbought level)
+    if(rsiPrevious < OverboughtLevel && rsiCurrent >= OverboughtLevel)
+    {
+        rsiCrossedOverbought = true;
+    }
+    
+    // Check for oversold crossover (RSI crosses below oversold level)
+    if(rsiPrevious > OversoldLevel && rsiCurrent <= OversoldLevel)
+    {
+        rsiCrossedOversold = true;
+    }
+    
+    // Check for exit level crossover
+    if(rsiPrevious < RSIExitLevel && rsiCurrent >= RSIExitLevel)
+    {
+        rsiCrossedExitLevel = true;
+    }
+    else if(rsiPrevious > RSIExitLevel && rsiCurrent <= RSIExitLevel)
+    {
+        rsiCrossedExitLevel = true;
+    }
 }
 
 //+------------------------------------------------------------------+
@@ -181,17 +222,46 @@ int OnInit()
     
     if(rsiHandle == INVALID_HANDLE)
     {
-        Print("Failed to create RSI indicator handle");
         return(INIT_FAILED);
+    }
+    
+    // Wait a bit for the indicator to be ready
+    Sleep(100);
+    
+    // Initialize RSI values with retry logic
+    double rsi[];
+    ArraySetAsSeries(rsi, true);
+    
+    int retryCount = 0;
+    bool rsiInitialized = false;
+    
+    while(retryCount < 10 && !rsiInitialized)
+    {
+        int copied = CopyBuffer(rsiHandle, 0, 0, 3, rsi);
+        if(copied >= 3)
+        {
+            rsiCurrent = rsi[0];
+            rsiPrevious = rsi[1];
+            rsiPrevious2 = rsi[2];
+            rsiInitialized = true;
+        }
+        else
+        {
+            retryCount++;
+            Sleep(100);
+        }
+    }
+    
+    if(!rsiInitialized)
+    {
+        // Don't fail initialization, just set default values
+        rsiCurrent = 50.0;
+        rsiPrevious = 50.0;
+        rsiPrevious2 = 50.0;
     }
     
     // Create panel
     CreatePanel();
-    
-    Print("Expert Advisor initialized successfully");
-    Print("Trading symbol: ", _Symbol);
-    Print("Account balance: ", AccountInfoDouble(ACCOUNT_BALANCE));
-    Print("Account leverage: ", AccountInfoInteger(ACCOUNT_LEVERAGE));
     
     return(INIT_SUCCEEDED);
 }
@@ -218,24 +288,18 @@ bool CloseAllTrades(string reason = "")
     
     if(totalPositions == 0)
         return true;
-        
+    
     // Check if there are any positions with our magic number
     bool hasOurPositions = false;
     for(int i = 0; i < totalPositions; i++)
     {
-        if(PositionGetSymbol(i) == _Symbol && PositionGetInteger(POSITION_MAGIC) == 123457)
+        if(PositionGetSymbol(i) == _Symbol && PositionGetInteger(POSITION_MAGIC) == 123456)
         {
             hasOurPositions = true;
             break;
         }
     }
-    
-    // Return if no positions with our magic number
-    if(!hasOurPositions)
-        return true;
 
-    Print("Attempting to close all positions", (reason != "" ? " - " + reason : ""));
-    
     for(int i = totalPositions - 1; i >= 0; i--)
     {
         if(PositionGetSymbol(i) == _Symbol)
@@ -248,14 +312,12 @@ bool CloseAllTrades(string reason = "")
             {
                 if(trade.PositionClose(_Symbol))
                 {
-                    Print("Position closed successfully");
                     isPositionOpen = false;
                     positionClosed = true;
                 }
                 else
                 {
                     int error = GetLastError();
-                    Print("Failed to close position. Error: ", error, " Retry: ", retryCount + 1);
                     
                     // If error is 4756 (Trade disabled), wait longer before retry
                     if(error == 4756)
@@ -273,7 +335,6 @@ bool CloseAllTrades(string reason = "")
             
             if(!positionClosed)
             {
-                Print("Failed to close position after all retries");
                 allClosed = false;
             }
         }
@@ -290,15 +351,12 @@ void OnTick()
     // Check if trading is allowed
     if(!IsTradingAllowed())
     {
-        Print("Trading is not allowed at the moment");
         return;
     }
     
     // Check if we're in Asian session
     if(!IsAsianSession())
     {
-        Print("Not in Asian session");
-        
         // Close all positions if outside Asian session and CloseOutsideSession is true
         if(CloseOutsideSession && !sessionCloseAttempted)
         {
@@ -320,17 +378,33 @@ void OnTick()
     // Check if spread is too high
     if(spreadInPips > MaxSpread)
     {
-        Print("Spread too high: ", spreadInPips, " pips");
         return;
     }
     
-    // Get RSI value
+    // Get RSI values from bar data
     double rsi[];
     ArraySetAsSeries(rsi, true);
     
-    if(CopyBuffer(rsiHandle, 0, 0, 1, rsi) != 1)
+    int copied = CopyBuffer(rsiHandle, 0, 0, 3, rsi);
+    if(copied < 3)
+    {
         return;
-        
+    }
+    
+    // Update RSI values
+    rsiPrevious2 = rsiPrevious;
+    rsiPrevious = rsiCurrent;
+    rsiCurrent = rsi[0];
+    
+    // Validate RSI values
+    if(rsiCurrent == 0 || rsiPrevious == 0)
+    {
+        return;
+    }
+    
+    // Check for RSI crossovers
+    CheckRSICrossover();
+    
     // Get current prices
     double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
     double currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
@@ -351,8 +425,14 @@ void OnTick()
     double sl = 0;
     double tp = 0;
     
+    // Prepare crossover info for panel
+    string crossInfo = "None";
+    if(rsiCrossedOverbought) crossInfo = "Overbought";
+    else if(rsiCrossedOversold) crossInfo = "Oversold";
+    else if(rsiCrossedExitLevel) crossInfo = "Exit";
+    
     // Update panel
-    UpdatePanel(rsi[0], positionStatus, spreadInPips, GetCurrentSession(), sl, tp);
+    UpdatePanel(rsiCurrent, positionStatus, spreadInPips, GetCurrentSession(), sl, tp, crossInfo);
     
     // Check for open position
     bool hasOpenPosition = false;
@@ -369,26 +449,24 @@ void OnTick()
             ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
             
             // Check for RSI exit if enabled
-            if(UseRSIExit)
+            if(UseRSIExit && rsiCrossedExitLevel)
             {
                 bool shouldExit = false;
                 
-                // For long positions, exit when RSI reaches or exceeds exit level
-                if(posType == POSITION_TYPE_BUY && rsi[0] >= RSIExitLevel)
+                // For long positions, exit when RSI crosses above exit level
+                if(posType == POSITION_TYPE_BUY && rsiCurrent >= RSIExitLevel && rsiPrevious < RSIExitLevel)
                 {
-                    Print("Closing long position due to RSI exit. RSI: ", rsi[0], " Exit Level: ", RSIExitLevel);
                     shouldExit = true;
                 }
-                // For short positions, exit when RSI reaches or falls below exit level
-                else if(posType == POSITION_TYPE_SELL && rsi[0] <= RSIExitLevel)
+                // For short positions, exit when RSI crosses below exit level
+                else if(posType == POSITION_TYPE_SELL && rsiCurrent <= RSIExitLevel && rsiPrevious > RSIExitLevel)
                 {
-                    Print("Closing short position due to RSI exit. RSI: ", rsi[0], " Exit Level: ", RSIExitLevel);
                     shouldExit = true;
                 }
                 
                 if(shouldExit)
                 {
-                    CloseAllTrades("RSI Exit");
+                    CloseAllTrades("RSI Exit Crossover");
                     return;
                 }
             }
@@ -396,7 +474,6 @@ void OnTick()
             // Check for timeout
             if(TimeCurrent() - positionOpenTime > MaxDuration * 3600)
             {
-                Print("Closing position due to timeout");
                 CloseAllTrades("Timeout");
                 return;
             }
@@ -405,11 +482,11 @@ void OnTick()
         }
     }
     
-    // If no position is open, look for entry signals
+    // If no position is open, look for entry signals based on RSI crossover
     if(!hasOpenPosition)
     {
-        // Place buy order if RSI is oversold
-        if(rsi[0] <= OversoldLevel)
+        // Place buy order if RSI crosses below oversold level (oversold crossover)
+        if(rsiCrossedOversold)
         {
             double sl = UseStopLoss ? currentBid - StopLossPips * _Point : 0;
             double tp = UseTakeProfit ? currentBid + TakeProfitPips * _Point : 0;
@@ -422,24 +499,19 @@ void OnTick()
             // Set trade parameters
             trade.SetDeviationInPoints(3);
             trade.SetTypeFilling(ORDER_FILLING_IOC);
-            trade.SetExpertMagicNumber(123457);
+            trade.SetExpertMagicNumber(123456);
             
             // Place buy order using CTrade
-            if(!trade.Buy(MaxLotSize, _Symbol, currentAsk, sl, tp, "RSI Buy"))
+            if(trade.Buy(MaxLotSize, _Symbol, currentAsk, sl, tp, "RSI Oversold Crossover Buy"))
             {
-                Print("Buy order failed. Error code: ", GetLastError());
-            }
-            else
-            {
-                Print("Buy order placed. RSI: ", rsi[0]);
                 isPositionOpen = true;
                 positionOpenPrice = currentAsk;
                 positionOpenTime = TimeCurrent();
                 lastPositionType = POSITION_TYPE_BUY;
             }
         }
-        // Place sell order if RSI is overbought
-        else if(rsi[0] >= OverboughtLevel)
+        // Place sell order if RSI crosses above overbought level (overbought crossover)
+        else if(rsiCrossedOverbought)
         {
             double sl = UseStopLoss ? currentAsk + StopLossPips * _Point : 0;
             double tp = UseTakeProfit ? currentAsk - TakeProfitPips * _Point : 0;
@@ -452,16 +524,11 @@ void OnTick()
             // Set trade parameters
             trade.SetDeviationInPoints(3);
             trade.SetTypeFilling(ORDER_FILLING_IOC);
-            trade.SetExpertMagicNumber(123457);
+            trade.SetExpertMagicNumber(123456);
             
             // Place sell order using CTrade
-            if(!trade.Sell(MaxLotSize, _Symbol, currentBid, sl, tp, "RSI Sell"))
+            if(trade.Sell(MaxLotSize, _Symbol, currentBid, sl, tp, "RSI Overbought Crossover Sell"))
             {
-                Print("Sell order failed. Error code: ", GetLastError());
-            }
-            else
-            {
-                Print("Sell order placed. RSI: ", rsi[0]);
                 isPositionOpen = true;
                 positionOpenPrice = currentBid;
                 positionOpenTime = TimeCurrent();
