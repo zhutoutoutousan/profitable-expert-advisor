@@ -1,0 +1,202 @@
+//@version=6
+strategy("SSE Index RSI Bounce Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, initial_capital=10000, pyramiding=100, calc_on_every_tick=false, calc_on_order_fills=false)
+
+// Input parameters
+rsi_length = input.int(17, "RSI Length", minval=1)
+rsi_oversold = input.int(27, "RSI Oversold Level", minval=1, maxval=50)
+rsi_overbought = input.int(86, "RSI Overbought Level", minval=50, maxval=100)
+ema_length = input.int(177, "EMA Length", minval=1)
+weekly_position_size = input.float(14.0, "Weekly Signal Position Size (%)", minval=0.1, maxval=100)
+daily_position_size = input.float(11.0, "Daily Signal Position Size (%)", minval=0.1, maxval=100)
+partial_exit_percent = input.float(41.0, "Partial Exit Percentage on Daily RSI Overbought (%)", minval=10.0, maxval=50.0)
+
+// New EMA Distance Trading Parameters
+ema_distance_threshold = input.float(16.0, "EMA Distance Threshold (Pips)", minval=1.0, maxval=1000.0)
+ema_distance_position_size = input.float(53, "EMA Distance Position Size (%)", minval=0.1, maxval=100)
+
+// EMA Distance Exit Parameters
+ema_exit_period = input.int(34, "EMA Exit Period", minval=10, maxval=200)
+enable_volume_confirmation = input.bool(true, "Require Volume Confirmation for EMA Exit")
+
+// Calculate indicators
+rsi_daily = ta.rsi(close, rsi_length)
+rsi_weekly = request.security(syminfo.tickerid, "1W", ta.rsi(close, rsi_length))
+ema_200 = ta.ema(close, ema_length)
+ema_exit = ta.ema(close, ema_exit_period)
+
+// EMA Distance Trading Logic
+pip_size = syminfo.mintick * 10 // Adjust pip size based on instrument
+price_ema_distance = math.abs(close - ema_200) / pip_size
+ema_distance_entry = price_ema_distance >= ema_distance_threshold * 100 and close > ema_200 // Only enter when price above EMA
+
+// RSI bounce conditions - back to original crossover logic
+// Weekly RSI bounce: RSI was below 30 and now crosses above 30
+rsi_weekly_prev = request.security(syminfo.tickerid, "1W", ta.rsi(close, rsi_length)[1])
+weekly_bounce = rsi_weekly_prev < rsi_oversold and rsi_weekly > rsi_oversold
+
+// Daily RSI bounce: RSI was below 30 and now crosses above 30
+daily_bounce = rsi_daily[1] < rsi_oversold and rsi_daily > rsi_oversold
+
+// Overbought conditions for exits - keep as crossovers for exits
+daily_rsi_overbought = rsi_daily > rsi_overbought and rsi_daily[1] <= rsi_overbought
+weekly_rsi_overbought = rsi_weekly > rsi_overbought and rsi_weekly_prev <= rsi_overbought
+
+// EMA exit condition: EMA was above price but now below price
+ema_above_price_prev = ema_200[1] > close[1]
+ema_below_price_now = ema_200 < close
+ema_exit_condition = ema_above_price_prev and ema_below_price_now
+
+// EMA Distance exit condition - EMA crossover exit
+// Price crosses below shorter period EMA (more responsive than 200 EMA)
+price_above_ema_exit_prev = close[1] > ema_exit[1]
+price_below_ema_exit_now = close < ema_exit
+ema_crossover_exit = price_above_ema_exit_prev and price_below_ema_exit_now
+
+// Optional volume confirmation
+volume_confirmation = not enable_volume_confirmation or volume > ta.sma(volume, 20)
+
+ema_distance_exit_condition = ema_crossover_exit and volume_confirmation
+
+// Track positions separately with counters for multiple trades
+var int weekly_trade_count = 0
+var int daily_trade_count = 0
+var int ema_distance_trade_count = 0
+var float weekly_position_qty = 0.0
+var float daily_position_qty = 0.0
+var float ema_distance_position_qty = 0.0
+
+// Entry conditions - allow multiple concurrent trades
+weekly_entry = weekly_bounce
+daily_entry = daily_bounce
+
+// Strategy execution - ensure ALL signals result in trades
+if weekly_entry
+    strategy.entry("Weekly_Long", strategy.long, qty=weekly_position_size, comment="Weekly RSI Bounce #" + str.tostring(weekly_trade_count + 1), alert_message="Weekly Entry")
+    weekly_trade_count := weekly_trade_count + 1
+    weekly_position_qty := weekly_position_qty + weekly_position_size
+    
+if daily_entry  
+    strategy.entry("Daily_Long", strategy.long, qty=daily_position_size, comment="Daily RSI Bounce #" + str.tostring(daily_trade_count + 1), alert_message="Daily Entry")
+    daily_trade_count := daily_trade_count + 1
+    daily_position_qty := daily_position_qty + daily_position_size
+
+if ema_distance_entry
+    strategy.entry("EMA_Distance_Long", strategy.long, qty=ema_distance_position_size, comment="EMA Distance Entry #" + str.tostring(ema_distance_trade_count + 1), alert_message="EMA Distance Entry")
+    ema_distance_trade_count := ema_distance_trade_count + 1
+    ema_distance_position_qty := ema_distance_position_qty + ema_distance_position_size
+
+// Debug - show actual entry attempts
+if weekly_entry
+    label.new(bar_index, high + (high - low) * 0.1, "WEEKLY ENTRY ATTEMPT", 
+              color=color.green, textcolor=color.white, size=size.normal, style=label.style_label_down)
+
+if daily_entry
+    label.new(bar_index, high + (high - low) * 0.15, "DAILY ENTRY ATTEMPT", 
+              color=color.blue, textcolor=color.white, size=size.normal, style=label.style_label_down)
+
+if ema_distance_entry
+    label.new(bar_index, high + (high - low) * 0.2, "EMA DISTANCE: " + str.tostring(price_ema_distance, "#.#") + " pips", 
+              color=color.purple, textcolor=color.white, size=size.normal, style=label.style_label_down)
+
+// Partial exit for weekly positions on daily RSI overbought
+if daily_rsi_overbought and weekly_position_qty > 0
+    exit_qty = weekly_position_qty * (partial_exit_percent / 100)
+    strategy.close("Weekly_Long", qty=exit_qty, comment="Weekly Partial Exit Daily OB")
+    weekly_position_qty := math.max(0, weekly_position_qty - exit_qty)
+
+// Partial exit for daily positions on daily RSI overbought  
+if daily_rsi_overbought and daily_position_qty > 0
+    exit_qty_daily = daily_position_qty * (partial_exit_percent / 100)
+    strategy.close("Daily_Long", qty=exit_qty_daily, comment="Daily Partial Exit OB")
+    daily_position_qty := math.max(0, daily_position_qty - exit_qty_daily)
+
+// Complete exit for weekly positions on weekly RSI overbought
+if weekly_rsi_overbought and weekly_position_qty > 0
+    strategy.close("Weekly_Long", comment="Complete Exit Weekly OB")
+    weekly_position_qty := 0.0
+    weekly_trade_count := 0
+
+// Exit all positions when EMA crosses from above price to below price
+if ema_exit_condition and strategy.position_size > 0
+    strategy.close_all("EMA Cross Exit")
+    weekly_position_qty := 0.0
+    daily_position_qty := 0.0
+    ema_distance_position_qty := 0.0
+    weekly_trade_count := 0
+    daily_trade_count := 0
+    ema_distance_trade_count := 0
+
+// Exit EMA distance positions when price crosses below EMA (anti-crossover)
+if ema_distance_exit_condition and ema_distance_position_qty > 0
+    strategy.close("EMA_Distance_Long", comment="EMA Distance Anti-Cross Exit")
+    ema_distance_position_qty := 0.0
+    ema_distance_trade_count := 0
+
+// Plotting
+plot(ema_200, "200 EMA", color=color.orange, linewidth=2)
+plot(ema_exit, "EMA Exit", color=color.purple, linewidth=1, style=plot.style_line)
+plot(rsi_daily, "Daily RSI", color=color.blue, display=display.data_window)
+plot(rsi_weekly, "Weekly RSI", color=color.red, display=display.data_window)
+
+// Plot RSI levels
+hline(rsi_oversold, "Oversold Level", color=color.red, linestyle=hline.style_dashed)
+hline(rsi_overbought, "Overbought Level", color=color.green, linestyle=hline.style_dashed)
+
+// Background color for RSI conditions  
+bgcolor(weekly_bounce ? color.new(color.green, 90) : na, title="Weekly RSI Bounce")
+bgcolor(daily_bounce ? color.new(color.blue, 90) : na, title="Daily RSI Bounce")
+bgcolor(daily_rsi_overbought and (weekly_position_qty > 0 or daily_position_qty > 0) ? color.new(color.yellow, 90) : na, title="Daily RSI Overbought (Partial Exit)")
+bgcolor(weekly_rsi_overbought and weekly_position_qty > 0 ? color.new(color.orange, 90) : na, title="Weekly RSI Overbought (Complete Exit)")
+bgcolor(ema_exit_condition and strategy.position_size > 0 ? color.new(color.red, 90) : na, title="EMA Cross Exit")
+bgcolor(ema_distance_exit_condition and ema_distance_position_qty > 0 ? color.new(color.maroon, 90) : na, title="EMA Distance Anti-Cross Exit")
+bgcolor(ema_distance_entry ? color.new(color.purple, 90) : na, title="EMA Distance Entry")
+
+// Plot entry and exit signals with enhanced debugging
+plotshape(weekly_entry, "Weekly Entry", shape.triangleup, location.belowbar, color.green, size=size.normal)
+plotshape(daily_entry, "Daily Entry", shape.triangleup, location.belowbar, color.blue, size=size.small)
+plotshape(ema_distance_entry, "EMA Distance Entry", shape.triangleup, location.belowbar, color.purple, size=size.normal)
+plotshape(daily_rsi_overbought and (weekly_position_qty > 0 or daily_position_qty > 0), "Partial Exit Both", shape.circle, location.abovebar, color.yellow, size=size.small)
+plotshape(weekly_rsi_overbought and weekly_position_qty > 0, "Complete Exit Weekly OB", shape.triangledown, location.abovebar, color.orange, size=size.normal)
+plotshape(ema_exit_condition and strategy.position_size > 0, "EMA Cross Exit", shape.triangledown, location.abovebar, color.red, size=size.large)
+plotshape(ema_distance_exit_condition and ema_distance_position_qty > 0, "EMA Distance Anti-Cross Exit", shape.triangledown, location.abovebar, color.maroon, size=size.normal)
+
+// Debug labels to show when conditions are met
+if weekly_bounce
+    label.new(bar_index, low - (high - low) * 0.1, "W-RSI: " + str.tostring(rsi_weekly, "#.##"), 
+              color=color.green, textcolor=color.white, size=size.small, style=label.style_label_up)
+
+if daily_bounce
+    label.new(bar_index, low - (high - low) * 0.05, "D-RSI: " + str.tostring(rsi_daily, "#.##"), 
+              color=color.blue, textcolor=color.white, size=size.small, style=label.style_label_up)
+
+// Table to show current status
+var table info_table = table.new(position.top_right, 2, 12, bgcolor=color.white, border_width=1)
+if barstate.islast
+    table.cell(info_table, 0, 0, "Indicator", bgcolor=color.gray, text_color=color.white)
+    table.cell(info_table, 1, 0, "Value", bgcolor=color.gray, text_color=color.white)
+    table.cell(info_table, 0, 1, "Daily RSI", bgcolor=color.white)
+    table.cell(info_table, 1, 1, str.tostring(rsi_daily, "#.##"), bgcolor=color.white)
+    table.cell(info_table, 0, 2, "Weekly RSI", bgcolor=color.white)
+    table.cell(info_table, 1, 2, str.tostring(rsi_weekly, "#.##"), bgcolor=color.white)
+    table.cell(info_table, 0, 3, "200 EMA", bgcolor=color.white)
+    table.cell(info_table, 1, 3, str.tostring(ema_200, "#.##"), bgcolor=color.white)
+    table.cell(info_table, 0, 4, "EMA Distance", bgcolor=color.white)
+    table.cell(info_table, 1, 4, str.tostring(price_ema_distance, "#.#") + " pips", bgcolor=color.white)
+    table.cell(info_table, 0, 5, "EMA Exit Level", bgcolor=color.white)
+    table.cell(info_table, 1, 5, str.tostring(ema_exit, "#.##"), bgcolor=color.white)
+    table.cell(info_table, 0, 6, "Total Position", bgcolor=color.white)
+    table.cell(info_table, 1, 6, strategy.position_size > 0 ? "Long" : "None", 
+               bgcolor=strategy.position_size > 0 ? color.green : color.white)
+    table.cell(info_table, 0, 7, "Total Size", bgcolor=color.white)
+    table.cell(info_table, 1, 7, str.tostring(strategy.position_size, "#.####"), bgcolor=color.white)
+    table.cell(info_table, 0, 8, "Weekly Qty", bgcolor=color.white)
+    table.cell(info_table, 1, 8, str.tostring(weekly_position_qty, "#.####"), 
+               bgcolor=weekly_position_qty > 0 ? color.green : color.white)
+    table.cell(info_table, 0, 9, "Daily Qty", bgcolor=color.white)
+    table.cell(info_table, 1, 9, str.tostring(daily_position_qty, "#.####"), 
+               bgcolor=daily_position_qty > 0 ? color.blue : color.white)
+    table.cell(info_table, 0, 10, "EMA Distance Qty", bgcolor=color.white)
+    table.cell(info_table, 1, 10, str.tostring(ema_distance_position_qty, "#.####"), 
+               bgcolor=ema_distance_position_qty > 0 ? color.purple : color.white)
+    table.cell(info_table, 0, 11, "Trade Counts", bgcolor=color.white)
+    table.cell(info_table, 1, 11, "W:" + str.tostring(weekly_trade_count) + " D:" + str.tostring(daily_trade_count) + " E:" + str.tostring(ema_distance_trade_count), bgcolor=color.white)
