@@ -1,0 +1,427 @@
+\section{Expert Advisor Algorithms}
+
+This section provides detailed analysis of each Expert Advisor, examining their trading logic, parameters, and implementation strategies.
+
+\subsection{RSI-Based Strategies}
+
+\subsubsection{RSI Reversal Asian AUD/USD}
+
+This EA implements a mean reversion strategy optimized for the AUD/USD pair during Asian trading sessions.
+
+\textbf{Strategy Logic:}
+\begin{itemize}
+    \item Enters long positions when RSI crosses below oversold level (30)
+    \item Enters short positions when RSI crosses above overbought level (68)
+    \item Exits positions when RSI crosses the neutral level (48)
+    \item Only trades during Asian session (00:00-08:00 UTC)
+    \item Implements spread filtering to avoid high-cost trades
+\end{itemize}
+
+\textbf{Key Parameters:}
+\begin{lstlisting}[style=mql5style]
+RSIPeriod = 28;
+OverboughtLevel = 68;
+OversoldLevel = 30;
+TakeProfitPips = 175;
+StopLossPips = 5;
+MaxSpread = 1000;
+MaxDuration = 340; // hours
+RSIExitLevel = 48;
+\end{lstlisting}
+
+\textbf{Profitability Factors:}
+\begin{enumerate}
+    \item \textbf{Session Optimization}: Asian session for AUD/USD exhibits predictable volatility patterns
+    \item \textbf{Mean Reversion}: RSI extremes tend to revert, creating profitable opportunities
+    \item \textbf{Strict Risk Management}: Small stop losses (5 pips) protect capital while allowing for larger targets (175 pips)
+    \item \textbf{Spread Filtering}: Avoids trading during high-spread conditions that erode profits
+\end{enumerate}
+
+\subsubsection{RSI Reversal Asian EUR/USD}
+
+Similar to AUD/USD version but optimized for EUR/USD characteristics.
+
+\textbf{Key Differences:}
+\begin{itemize}
+    \item Different RSI period (14 vs 28)
+    \item Higher overbought level (78 vs 68)
+    \item Larger take profit (635 pips vs 175 pips)
+    \item Larger stop loss (290 pips vs 5 pips)
+    \item Shorter maximum duration (22 hours vs 340 hours)
+\end{itemize}
+
+These differences reflect EUR/USD's higher volatility and different price action characteristics compared to AUD/USD.
+
+\subsubsection{RSI Scalping XAU/USD}
+
+A high-frequency scalping strategy for Gold trading.
+
+\textbf{Strategy Logic:}
+\begin{itemize}
+    \item Enters long when RSI crosses from below oversold (57) to above
+    \item Enters short when RSI crosses from above overbought (71) to below
+    \item Exits long positions when RSI reaches target (80) or goes against position for 4 bars
+    \item Exits short positions when RSI reaches target (57) or goes against position for 4 bars
+\end{itemize}
+
+\textbf{Key Features:}
+\begin{lstlisting}[style=mql5style]
+RSI_Period = 14;
+RSI_Overbought = 71;
+RSI_Oversold = 57;
+RSI_Target_Buy = 80;
+RSI_Target_Sell = 57;
+BarsToWait = 4; // Bars to wait when RSI goes against position
+\end{lstlisting}
+
+\textbf{Profitability Factors:}
+\begin{itemize}
+    \item \textbf{Quick Exits}: Closes positions when RSI moves against the trade, limiting losses
+    \item \textbf{Target-Based Exits}: Takes profits at predefined RSI levels
+    \item \textbf{Gold Volatility}: Capitalizes on Gold's intraday volatility
+    \item \textbf{Bar-Based Logic}: Processes only on new bars, reducing computational overhead
+\end{itemize}
+
+\subsubsection{RSI CrossOver Reversal XAU/USD}
+
+Combines RSI crossover signals with EMA trend confirmation.
+
+\textbf{Strategy Logic:}
+\begin{itemize}
+    \item Uses RSI (period 19) with extreme levels (oversold: 22, overbought: 93)
+    \item Incorporates EMA (period 140) for trend strength analysis
+    \item Closes trades when strong trends are detected (prevents counter-trend trading)
+    \item Implements trailing stop (295 pips) to protect profits
+    \item Time-based trading windows (specific hours)
+    \item Day-of-week filtering
+\end{itemize}
+
+\textbf{Advanced Features:}
+\begin{lstlisting}[style=mql5style]
+// EMA slope calculation
+double emaSlope = (currentEMA - previousEMA) * 100;
+
+// Distance to EMA
+double priceToEmaDistance = (closeCurr - currentEMA) * 10;
+
+// Trend strength check
+bool isTrendStrong = MathAbs(emaSlope) > emaSlopeThreshold || 
+                     MathAbs(priceToEmaDistance) > emaDistanceThreshold;
+\end{lstlisting}
+
+\subsection{Multi-Strategy Systems}
+
+\subsubsection{RSI Follow Reverse EMA CrossOver BTC/USD}
+
+A sophisticated multi-strategy system combining three distinct approaches.
+
+\textbf{Three Strategies:}
+
+\textbf{1. RSI Follow Strategy:}
+\begin{itemize}
+    \item Enters long when RSI crosses above oversold level (46) after being oversold
+    \item Enters short when RSI crosses below overbought level (78) after being overbought
+    \item Exits when RSI returns to neutral (44)
+    \item Trading hours: 23:00-08:00 UTC
+\end{itemize}
+
+\textbf{2. RSI Reverse Strategy:}
+\begin{itemize}
+    \item Contrarian approach: sells when RSI crosses below 53 after being overbought (51)
+    \item Buys when RSI crosses above 53 after being oversold (49)
+    \item Exits at level 48
+    \item Trading hours: 07:00-13:00 UTC
+    \item Cooldown period: 15 bars after losses
+\end{itemize}
+
+\textbf{3. EMA Cross Strategy:}
+\begin{itemize}
+    \item Enters long when price crosses above EMA (period 120)
+    \item Uses distance-based entry: requires price to be 160+ pips above EMA for 26 bars
+    \item Exits when price crosses back below EMA
+    \item Trading hours: 08:00-14:00 UTC
+\end{itemize}
+
+\textbf{Strategy Management:}
+\begin{lstlisting}[style=mql5style]
+// Strategy lock mechanism
+bool HasProfitablePosition(int excludeMagic)
+{
+   // Prevents new trades when another strategy is profitable
+   // Protects overall portfolio
+}
+
+// Opposite trade closing
+if(InpCloseOppositeTrades)
+{
+   // Closes conflicting positions when one strategy profits
+}
+\end{lstlisting}
+
+\textbf{Profitability Factors:}
+\begin{enumerate}
+    \item \textbf{Strategy Diversification}: Three uncorrelated strategies reduce overall risk
+    \item \textbf{Time-Based Optimization}: Each strategy trades during optimal hours
+    \item \textbf{Cooldown Mechanisms}: Prevents over-trading after losses
+    \item \textbf{Strategy Locking}: Protects profits by preventing conflicting trades
+\end{enumerate}
+
+\subsubsection{RSI MidPoint Hijack XAU/USD}
+
+Similar multi-strategy approach optimized for Gold trading.
+
+\textbf{Key Differences:}
+\begin{itemize}
+    \item Different RSI periods (32 vs 49 for follow, 59 vs 159 for reverse)
+    \item Different overbought/oversold levels
+    \item EMA period: 120 vs 175
+    \item Different trading hour windows
+\end{itemize}
+
+\subsection{EMA-Based Strategies}
+
+\subsubsection{EMA Slope Distance Cocktail XAU/USD}
+
+An advanced EMA-based strategy combining slope analysis with distance metrics.
+
+\textbf{Core Concept:}
+The strategy uses two key metrics:
+\begin{enumerate}
+    \item \textbf{EMA Slope}: Rate of change in EMA value
+    \item \textbf{Price Distance}: Distance between price and EMA
+\end{enumerate}
+
+\textbf{Entry Logic:}
+\begin{lstlisting}[style=mql5style]
+// Calculate EMA slope
+double emaSlope = (currentEMA - previousEMA) / _Point;
+
+// Calculate price distance
+double priceDistance = MathAbs(close - currentEMA) / _Point;
+
+// Entry conditions
+bool priceTrigger = priceDistance > PreisSchwelle; // 2050 pips
+bool slopeTrigger = MathAbs(emaSlope) > SteigungSchwelle; // 100 pips
+
+// Start monitoring when both triggers activate
+if(priceTrigger && slopeTrigger)
+{
+   // Monitor for 750 seconds
+   // Enter when price crosses EMA
+}
+\end{lstlisting}
+
+\textbf{Advanced Features:}
+\begin{itemize}
+    \item \textbf{Trailing Stop}: Moves stop loss to protect profits (400 pips)
+    \item \textbf{Profit Check}: Closes unprofitable trades after 26 bars
+    \item \textbf{Maximum Trades}: Limits to 4 trades per crossover event
+    \item \textbf{Bar vs Tick Processing}: Configurable processing mode
+\end{itemize}
+
+\textbf{Performance Metrics:}
+\begin{itemize}
+    \item Yearly return: 28\%
+    \item Profit Factor: 1.222
+    \item Recovery Factor: 7.17
+    \item Sharpe Ratio: 4.11
+    \item Maximum Drawdown: 14.00\%
+    \item Win Rate: 64.65\%
+    \item Total Trades: 2,863
+\end{itemize}
+
+\subsection{Breakout Strategies}
+
+\subsubsection{Darvas Box XAU/USD}
+
+Implements Nicolas Darvas' box theory for identifying and trading breakouts.
+
+\textbf{Darvas Box Theory:}
+\begin{enumerate}
+    \item Identify consolidation periods (boxes) where price moves within a narrow range
+    \item Wait for price to break above (buy) or below (sell) the box
+    \item Enter trades on breakouts with volume confirmation
+    \item Use the box boundaries for stop loss placement
+\end{enumerate}
+
+\textbf{Implementation:}
+\begin{lstlisting}[style=mql5style]
+void CalculateDarvasBox()
+{
+   double high = 0;
+   double low = DBL_MAX;
+   
+   // Find highest high and lowest low in period
+   for(int i = 0; i < BoxPeriod; i++)
+   {
+      high = MathMax(high, iHigh(_Symbol, PERIOD_H1, i));
+      low = MathMin(low, iLow(_Symbol, PERIOD_H1, i));
+   }
+   
+   double range = high - low;
+   double allowedRange = BoxDeviation * _Point;
+   
+   // Box is formed if range is within allowed deviation
+   if(range <= allowedRange)
+   {
+      boxHigh = high;
+      boxLow = low;
+      boxFormed = true;
+   }
+}
+\end{lstlisting}
+
+\textbf{Entry Conditions:}
+\begin{itemize}
+    \item Box must be formed (consolidation detected)
+    \item Price breaks above box high (buy) or below box low (sell)
+    \item Volume exceeds threshold (938)
+    \item Trend confirmation via EMA
+    \item Volume spike confirmation
+\end{itemize}
+
+\textbf{Key Parameters:}
+\begin{lstlisting}[style=mql5style]
+BoxPeriod = 165;           // Bars to analyze for box formation
+BoxDeviation = 25140;      // Maximum allowed range in points
+VolumeThreshold = 938;     // Minimum volume for breakout
+StopLoss = 1665;          // Stop loss in points
+TakeProfit = 3685;        // Take profit in points
+MA_Period = 125;          // EMA period for trend confirmation
+TrendThreshold = 4.94;     // Minimum trend strength
+\end{lstlisting}
+
+\textbf{Profitability Factors:}
+\begin{enumerate}
+    \item \textbf{Breakout Momentum}: Breakouts from consolidation often continue
+    \item \textbf{Volume Confirmation}: High volume validates breakout strength
+    \item \textbf{Trend Alignment}: Trading with the trend increases success probability
+    \item \textbf{Dynamic Box Sizing}: Adapts to market volatility
+\end{enumerate}
+
+\subsection{Equity Trading Strategies}
+
+\subsubsection{RSI Scalping for Equities}
+
+Scalping strategies optimized for individual stocks (APPL, MSFT, TSLA).
+
+\textbf{Key Characteristics:}
+\begin{itemize}
+    \item Similar logic to XAU/USD scalping
+    \item Optimized parameters for each stock's volatility
+    \item Higher frequency trading
+    \item Smaller profit targets
+    \item Quick exit mechanisms
+\end{itemize}
+
+\subsection{Common Implementation Patterns}
+
+\subsubsection{Risk Management}
+
+All EAs implement various risk management techniques:
+
+\textbf{Stop Loss and Take Profit:}
+\begin{lstlisting}[style=mql5style]
+double sl = price - StopLoss * _Point;
+double tp = price + TakeProfit * _Point;
+
+// Validate stop levels
+double minStopLevel = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * point;
+if(sl < minStopLevel) sl = price - minStopLevel;
+\end{lstlisting}
+
+\textbf{Trailing Stop:}
+\begin{lstlisting}[style=mql5style]
+if(position_profit > 0)
+{
+   double new_stop_loss = current_price - (TrailingStop * _Point);
+   if(new_stop_loss > current_stop_loss)
+   {
+      trade.PositionModify(_Symbol, new_stop_loss, tp);
+   }
+}
+\end{lstlisting}
+
+\textbf{Maximum Drawdown Protection:}
+\begin{lstlisting}[style=mql5style]
+double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+double initialBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+double drawdown = (initialBalance - currentEquity) / initialBalance;
+
+if(drawdown > max_drawdown)
+{
+   // Stop trading or reduce position size
+}
+\end{lstlisting}
+
+\subsubsection{Session-Based Trading}
+
+Many EAs implement time-based trading restrictions:
+
+\begin{lstlisting}[style=mql5style]
+bool IsWithinTradingHours(int startHour, int endHour)
+{
+   MqlDateTime currentTime;
+   TimeToStruct(TimeCurrent(), currentTime);
+   
+   if(startHour <= endHour)
+   {
+      return (currentTime.hour >= startHour && currentTime.hour < endHour);
+   }
+   else
+   {
+      // Handles overnight sessions (e.g., 22:00-08:00)
+      return (currentTime.hour >= startHour || currentTime.hour < endHour);
+   }
+}
+\end{lstlisting}
+
+\subsubsection{Cooldown Mechanisms}
+
+Prevents over-trading after losses:
+
+\begin{lstlisting}[style=mql5style]
+datetime lastTradeTime = 0;
+int cooldownSeconds = 209;
+
+bool cooldownPassed = (TimeCurrent() - lastTradeTime) >= cooldownSeconds;
+
+if(!cooldownPassed)
+   return; // Skip trading
+\end{lstlisting}
+
+\subsubsection{Spread Filtering}
+
+Avoids trading during high-spread conditions:
+
+\begin{lstlisting}[style=mql5style]
+double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - 
+                SymbolInfoDouble(_Symbol, SYMBOL_BID);
+int spreadInPips = (int)(spread / _Point);
+
+if(spreadInPips > MaxSpread)
+   return; // Spread too high, skip trade
+\end{lstlisting}
+
+\subsection{Strategy Comparison}
+
+Table \ref{tab:strategy_comparison} summarizes key characteristics of the examined strategies.
+
+\begin{table}[H]
+\centering
+\caption{Strategy Comparison}
+\label{tab:strategy_comparison}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Strategy} & \textbf{Type} & \textbf{Timeframe} & \textbf{Win Rate} & \textbf{Profit Factor} \\
+\midrule
+RSI Reversal AUD/USD & Mean Reversion & M15 & N/A & N/A \\
+RSI Scalping XAU/USD & Scalping & H1 & N/A & N/A \\
+EMA Slope Distance & Trend Following & H1 & 64.65\% & 1.222 \\
+Darvas Box XAU/USD & Breakout & H1 & N/A & N/A \\
+RSI Follow/Reverse & Multi-Strategy & H1 & N/A & N/A \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each strategy is designed for specific market conditions and instruments, demonstrating the importance of strategy-market fit in algorithmic trading.

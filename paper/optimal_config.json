@@ -1,0 +1,8 @@
+{
+  "order_book_liquidity": 27.337507902560162,
+  "big_sentiment_threshold": 0.31249746155318936,
+  "big_volume_threshold": 99.1788610573351,
+  "big_trade_size_pct": 0.1435380702026215,
+  "fundamental_reversion": 0.007385008311278914,
+  "num_big_players": 9
+}

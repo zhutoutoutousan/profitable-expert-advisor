@@ -1,0 +1,17 @@
+# ONNX and Machine Learning
+onnx>=1.12.0
+onnxruntime>=1.12.0
+tensorflow>=2.10.0
+tf2onnx>=1.13.0
+
+# Data Processing
+pandas>=1.3.0
+numpy>=1.21.0
+scikit-learn>=1.0.0
+
+# MetaTrader 5 Integration
+MetaTrader5>=5.0.45
+
+# Visualization and Utilities
+matplotlib>=3.4.0
+tqdm>=4.64.0

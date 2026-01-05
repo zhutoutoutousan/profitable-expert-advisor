@@ -1,0 +1,282 @@
+\section{TradingView Pine Script Strategies}
+
+TradingView's Pine Script provides a powerful platform for developing and backtesting trading strategies. This section examines a sophisticated multi-timeframe RSI strategy with EMA distance trading.
+
+\subsection{Pine Script Overview}
+
+Pine Script is TradingView's domain-specific language for creating custom indicators and strategies. Unlike MQL5, Pine Script is designed specifically for technical analysis and strategy development.
+
+\subsection{SSE Index RSI Bounce Strategy}
+
+This strategy is specifically designed for the Shanghai Stock Exchange (SSE) Index, combining multiple timeframe RSI analysis with EMA distance trading.
+
+\subsubsection{Strategy Architecture}
+
+The strategy implements three distinct entry mechanisms:
+
+\textbf{1. Weekly RSI Bounce:}
+\begin{itemize}
+    \item Monitors weekly RSI for oversold conditions
+    \item Enters long when weekly RSI crosses above oversold level (27)
+    \item Position size: 14\% of equity
+    \item Targets major trend reversals
+\end{itemize}
+
+\textbf{2. Daily RSI Bounce:}
+\begin{itemize}
+    \item Monitors daily RSI for oversold conditions
+    \item Enters long when daily RSI crosses above oversold level (27)
+    \item Position size: 11\% of equity
+    \item Captures short-term momentum shifts
+\end{itemize}
+
+\textbf{3. EMA Distance Entry:}
+\begin{itemize}
+    \item Enters when price extends 16+ pips from 200 EMA
+    \item Requires price to remain above EMA
+    \item Position size: 53\% of equity
+    \item Exploits mean reversion opportunities
+\end{itemize}
+
+\subsubsection{Core Implementation}
+
+\begin{lstlisting}[style=pinescriptstyle, caption=Pine Script Strategy Structure]
+//@version=6
+strategy("SSE Index RSI Bounce Strategy", overlay=true, 
+         default_qty_type=strategy.percent_of_equity, 
+         initial_capital=10000, pyramiding=100)
+
+// Input parameters
+rsi_length = input.int(17, "RSI Length", minval=1)
+rsi_oversold = input.int(27, "RSI Oversold Level", minval=1, maxval=50)
+rsi_overbought = input.int(86, "RSI Overbought Level", minval=50, maxval=100)
+ema_length = input.int(177, "EMA Length", minval=1)
+
+// Calculate indicators
+rsi_daily = ta.rsi(close, rsi_length)
+rsi_weekly = request.security(syminfo.tickerid, "1W", ta.rsi(close, rsi_length))
+ema_200 = ta.ema(close, ema_length)
+\end{lstlisting}
+
+\subsubsection{Multi-Timeframe Analysis}
+
+Pine Script's \texttt{request.security()} function enables seamless multi-timeframe analysis:
+
+\begin{lstlisting}[style=pinescriptstyle]
+// Get weekly RSI
+rsi_weekly = request.security(syminfo.tickerid, "1W", ta.rsi(close, rsi_length))
+rsi_weekly_prev = request.security(syminfo.tickerid, "1W", ta.rsi(close, rsi_length)[1])
+
+// Weekly bounce detection
+weekly_bounce = rsi_weekly_prev < rsi_oversold and rsi_weekly > rsi_oversold
+\end{lstlisting}
+
+This allows the strategy to analyze weekly conditions while executing on any timeframe.
+
+\subsubsection{Entry Logic}
+
+\textbf{RSI Bounce Detection:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Daily RSI bounce: RSI was below 30 and now crosses above 30
+daily_bounce = rsi_daily[1] < rsi_oversold and rsi_daily > rsi_oversold
+
+// Weekly RSI bounce: RSI was below 30 and now crosses above 30
+weekly_bounce = rsi_weekly_prev < rsi_oversold and rsi_weekly > rsi_oversold
+\end{lstlisting}
+
+\textbf{EMA Distance Calculation:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Calculate pip size (adjusts for instrument)
+pip_size = syminfo.mintick * 10
+price_ema_distance = math.abs(close - ema_200) / pip_size
+
+// EMA distance entry condition
+ema_distance_entry = price_ema_distance >= ema_distance_threshold * 100 
+                     and close > ema_200
+\end{lstlisting}
+
+\subsubsection{Position Management}
+
+The strategy uses separate position tracking for each entry type:
+
+\begin{lstlisting}[style=pinescriptstyle]
+// Track positions separately
+var int weekly_trade_count = 0
+var int daily_trade_count = 0
+var int ema_distance_trade_count = 0
+var float weekly_position_qty = 0.0
+var float daily_position_qty = 0.0
+var float ema_distance_position_qty = 0.0
+
+// Entry execution
+if weekly_entry
+    strategy.entry("Weekly_Long", strategy.long, qty=weekly_position_size, 
+                   comment="Weekly RSI Bounce #" + str.tostring(weekly_trade_count + 1))
+    weekly_trade_count := weekly_trade_count + 1
+    weekly_position_qty := weekly_position_qty + weekly_position_size
+\end{lstlisting}
+
+\subsubsection{Exit Logic}
+
+\textbf{Partial Exits:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Partial exit for weekly positions on daily RSI overbought
+if daily_rsi_overbought and weekly_position_qty > 0
+    exit_qty = weekly_position_qty * (partial_exit_percent / 100)
+    strategy.close("Weekly_Long", qty=exit_qty, 
+                   comment="Weekly Partial Exit Daily OB")
+    weekly_position_qty := math.max(0, weekly_position_qty - exit_qty)
+\end{lstlisting}
+
+\textbf{Complete Exits:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Complete exit for weekly positions on weekly RSI overbought
+if weekly_rsi_overbought and weekly_position_qty > 0
+    strategy.close("Weekly_Long", comment="Complete Exit Weekly OB")
+    weekly_position_qty := 0.0
+    weekly_trade_count := 0
+\end{lstlisting}
+
+\textbf{EMA Crossover Exit:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Exit all positions when EMA crosses from above price to below price
+ema_above_price_prev = ema_200[1] > close[1]
+ema_below_price_now = ema_200 < close
+ema_exit_condition = ema_above_price_prev and ema_below_price_now
+
+if ema_exit_condition and strategy.position_size > 0
+    strategy.close_all("EMA Cross Exit")
+\end{lstlisting}
+
+\subsubsection{Enhanced Version Features}
+
+The enhanced version adds sophisticated filtering mechanisms:
+
+\textbf{EMA Alignment Filter:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Calculate fast and slow EMAs for alignment check
+fast_ema = ta.ema(close, fast_ema_length)
+slow_ema = ta.ema(close, slow_ema_length)
+ema_alignment_distance = math.abs(fast_ema - slow_ema) / pip_size
+
+// EMA Alignment Filter Logic
+ema_alignment_ok = false
+if ema_alignment_direction == "both"
+    ema_alignment_ok := ema_alignment_distance >= ema_alignment_threshold
+else if ema_alignment_direction == "above"
+    ema_alignment_ok := fast_ema > slow_ema and 
+                        ema_alignment_distance >= ema_alignment_threshold
+\end{lstlisting}
+
+\textbf{Price Proximity Filter:}
+\begin{lstlisting}[style=pinescriptstyle]
+// Prevent trades when price is too close to 200 EMA
+price_proximity_ok = price_ema_distance >= price_proximity_threshold * 100
+
+// Enhanced EMA Distance Entry with filters
+ema_distance_entry = price_ema_distance >= ema_distance_threshold * 100 
+                     and close > ema_200 
+                     and ema_alignment_ok 
+                     and price_proximity_ok
+\end{lstlisting}
+
+\subsubsection{Visual Feedback}
+
+The strategy provides comprehensive visual feedback:
+
+\begin{lstlisting}[style=pinescriptstyle]
+// Background colors for conditions
+bgcolor(weekly_bounce ? color.new(color.green, 90) : na, 
+        title="Weekly RSI Bounce")
+bgcolor(daily_bounce ? color.new(color.blue, 90) : na, 
+        title="Daily RSI Bounce")
+bgcolor(ema_distance_entry ? color.new(color.purple, 90) : na, 
+        title="EMA Distance Entry")
+
+// Plot entry and exit signals
+plotshape(weekly_entry, "Weekly Entry", shape.triangleup, 
+          location.belowbar, color.green, size=size.normal)
+plotshape(daily_entry, "Daily Entry", shape.triangleup, 
+          location.belowbar, color.blue, size=size.small)
+plotshape(ema_distance_entry, "EMA Distance Entry", shape.triangleup, 
+          location.belowbar, color.purple, size=size.normal)
+\end{lstlisting}
+
+\subsubsection{Information Table}
+
+Real-time status display:
+
+\begin{lstlisting}[style=pinescriptstyle]
+var table info_table = table.new(position.top_right, 2, 16, 
+                                  bgcolor=color.white, border_width=1)
+if barstate.islast
+    table.cell(info_table, 0, 0, "Indicator", bgcolor=color.gray)
+    table.cell(info_table, 1, 0, "Value", bgcolor=color.gray)
+    table.cell(info_table, 0, 1, "Daily RSI", bgcolor=color.white)
+    table.cell(info_table, 1, 1, str.tostring(rsi_daily, "#.##"), 
+               bgcolor=color.white)
+    // ... additional cells
+\end{lstlisting}
+
+\subsection{Key Differences: Pine Script vs MQL5}
+
+\begin{table}[H]
+\centering
+\caption{Pine Script vs MQL5 Comparison}
+\label{tab:pinescript_vs_mql5}
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Pine Script} & \textbf{MQL5} \\
+\midrule
+Platform & TradingView (Cloud) & MetaTrader 5 (Desktop) \\
+Execution & Backtesting/Paper Trading & Live Trading \\
+Multi-Timeframe & \texttt{request.security()} & Manual timeframe switching \\
+Position Management & Built-in strategy functions & Manual CTrade class \\
+Visualization & Built-in plotting & Manual object creation \\
+Real-time Data & Cloud-based & Broker connection required \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Strategy Rationale}
+
+\textbf{Why This Strategy Works:}
+
+\begin{enumerate}
+    \item \textbf{Multi-Timeframe Confirmation}: Weekly signals provide major trend direction, daily signals capture short-term opportunities
+    \item \textbf{RSI Mean Reversion}: Oversold bounces in equity markets often lead to profitable reversals
+    \item \textbf{EMA Distance Trading}: Extreme price deviations from EMA tend to revert, creating profit opportunities
+    \item \textbf{Partial Profit Taking}: Scaling out positions at overbought levels locks in profits while allowing for continued upside
+    \item \textbf{EMA Exit Protection}: Crossover exits protect capital during major trend reversals
+\end{enumerate}
+
+\subsection{Market-Specific Optimization}
+
+The strategy is optimized for Chinese equity markets:
+
+\begin{itemize}
+    \item \textbf{Volatility Characteristics}: Chinese markets exhibit high volatility, making RSI bounces more frequent
+    \item \textbf{Emotion-Driven Moves}: Retail-driven markets create more extreme RSI readings
+    \item \textbf{Session Patterns}: Trading during specific hours captures optimal market conditions
+    \item \textbf{Position Sizing}: Larger position sizes (up to 53\%) capitalize on high-probability setups
+\end{itemize}
+
+\subsection{Performance Considerations}
+
+\textbf{Advantages of Pine Script:}
+\begin{itemize}
+    \item Easy backtesting with historical data
+    \item Cloud-based execution (no local resources required)
+    \item Built-in visualization and debugging tools
+    \item Community sharing and strategy marketplace
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Limited to TradingView platform
+    \item No direct broker integration (requires manual execution or TradingView broker)
+    \item Less control over execution details compared to MQL5
+    \item Cloud dependency (requires internet connection)
+\end{itemize}
+
+The TradingView strategy demonstrates how modern cloud-based platforms enable sophisticated multi-timeframe strategies with comprehensive risk management and visual feedback, complementing the MQL5 implementations for different trading needs and preferences.

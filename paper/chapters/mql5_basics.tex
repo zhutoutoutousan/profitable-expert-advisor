@@ -1,0 +1,323 @@
+\section{MQL5 Programming Fundamentals}
+
+MQL5 (MetaQuotes Language 5) is the programming language for developing Expert Advisors, indicators, and scripts in MetaTrader 5. Understanding MQL5 fundamentals is essential for implementing profitable trading algorithms.
+
+\subsection{Program Structure}
+
+An MQL5 Expert Advisor follows a specific structure:
+
+\begin{lstlisting}[style=mql5style, caption=Basic MQL5 EA Structure]
+//+------------------------------------------------------------------+
+//|                                                    MyExpert.mq5 |
+//|                                  Copyright 2024, MetaQuotes Ltd. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2024, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#property strict
+
+#include <Trade\Trade.mqh>
+
+// Input parameters
+input double LotSize = 0.1;
+input int MagicNumber = 12345;
+
+// Global variables
+CTrade trade;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   trade.SetExpertMagicNumber(MagicNumber);
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Trading logic here
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Cleanup code
+}
+\end{lstlisting}
+
+\subsection{Key Components}
+
+\subsubsection{Property Directives}
+Property directives define metadata about the EA:
+\begin{itemize}
+    \item \texttt{\#property copyright}: Copyright information
+    \item \texttt{\#property version}: Version number
+    \item \texttt{\#property strict}: Enables strict type checking
+\end{itemize}
+
+\subsubsection{Input Parameters}
+Input parameters allow users to configure the EA without modifying code:
+\begin{lstlisting}[style=mql5style]
+input int    RSI_Period = 14;
+input double LotSize = 0.1;
+input bool   UseStopLoss = true;
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_H1;
+\end{lstlisting}
+
+\subsubsection{Includes}
+Standard libraries provide essential functionality:
+\begin{lstlisting}[style=mql5style]
+#include <Trade\Trade.mqh>        // Trading functions
+#include <Indicators\Trend.mqh>   // Trend indicators
+#include <Indicators\Volumes.mqh> // Volume indicators
+\end{lstlisting}
+
+\subsection{Core Functions}
+
+\subsubsection{OnInit()}
+Called once when the EA is loaded. Used for:
+\begin{itemize}
+    \item Initializing indicators
+    \item Setting up trade objects
+    \item Validating parameters
+    \item Allocating resources
+\end{itemize}
+
+\begin{lstlisting}[style=mql5style, caption=OnInit Example]
+int OnInit()
+{
+   // Create indicator handle
+   rsiHandle = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
+   if(rsiHandle == INVALID_HANDLE)
+   {
+      Print("Error creating RSI indicator");
+      return(INIT_FAILED);
+   }
+   
+   // Configure trade object
+   trade.SetExpertMagicNumber(MagicNumber);
+   trade.SetDeviationInPoints(10);
+   
+   return(INIT_SUCCEEDED);
+}
+\end{lstlisting}
+
+\subsubsection{OnTick()}
+Called on every price tick. Contains the main trading logic:
+\begin{lstlisting}[style=mql5style, caption=OnTick Example]
+void OnTick()
+{
+   // Check for new bar (optional optimization)
+   static datetime lastBarTime = 0;
+   datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(currentBarTime == lastBarTime)
+      return; // Same bar, skip processing
+   lastBarTime = currentBarTime;
+   
+   // Get indicator values
+   double rsi[];
+   ArraySetAsSeries(rsi, true);
+   if(CopyBuffer(rsiHandle, 0, 0, 2, rsi) <= 0)
+      return;
+   
+   // Trading logic
+   if(rsi[0] < 30 && rsi[1] >= 30)
+   {
+      // Buy signal
+      trade.Buy(LotSize, _Symbol);
+   }
+}
+\end{lstlisting}
+
+\subsubsection{OnDeinit()}
+Called when the EA is removed. Used for cleanup:
+\begin{lstlisting}[style=mql5style]
+void OnDeinit(const int reason)
+{
+   // Release indicator handles
+   if(rsiHandle != INVALID_HANDLE)
+      IndicatorRelease(rsiHandle);
+   
+   // Delete chart objects
+   ObjectsDeleteAll(0, "MyPrefix");
+}
+\end{lstlisting}
+
+\subsection{Indicator Management}
+
+\subsubsection{Creating Indicators}
+Indicators are created using built-in functions:
+\begin{lstlisting}[style=mql5style]
+int rsiHandle = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
+int emaHandle = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
+int volumeHandle = iVolumes(_Symbol, PERIOD_CURRENT, VOLUME_TICK);
+\end{lstlisting}
+
+\subsubsection{Reading Indicator Values}
+Use \texttt{CopyBuffer()} to retrieve indicator data:
+\begin{lstlisting}[style=mql5style]
+double rsi[];
+ArraySetAsSeries(rsi, true); // Index 0 = most recent
+if(CopyBuffer(rsiHandle, 0, 0, 3, rsi) > 0)
+{
+   double currentRSI = rsi[0];
+   double previousRSI = rsi[1];
+}
+\end{lstlisting}
+
+\subsection{Trading Operations}
+
+\subsubsection{CTrade Class}
+The \texttt{CTrade} class provides a high-level interface for trading:
+\begin{lstlisting}[style=mql5style]
+CTrade trade;
+
+// Configure
+trade.SetExpertMagicNumber(12345);
+trade.SetDeviationInPoints(10);
+trade.SetTypeFilling(ORDER_FILLING_IOC);
+
+// Open positions
+trade.Buy(0.1, _Symbol, 0, 0, 0, "Buy Order");
+trade.Sell(0.1, _Symbol, 0, 0, 0, "Sell Order");
+
+// Close positions
+trade.PositionClose(_Symbol);
+
+// Modify positions
+trade.PositionModify(_Symbol, newSL, newTP);
+\end{lstlisting}
+
+\subsubsection{Position Management}
+Check and manage existing positions:
+\begin{lstlisting}[style=mql5style]
+// Check if position exists
+bool hasPosition = PositionSelect(_Symbol);
+
+if(hasPosition)
+{
+   // Get position details
+   double profit = PositionGetDouble(POSITION_PROFIT);
+   double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+   ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+   
+   // Close if profit target reached
+   if(profit > 100)
+      trade.PositionClose(_Symbol);
+}
+\end{lstlisting}
+
+\subsection{Price and Symbol Information}
+
+\subsubsection{Getting Prices}
+\begin{lstlisting}[style=mql5style]
+double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+\end{lstlisting}
+
+\subsubsection{Historical Data}
+Access bar data:
+\begin{lstlisting}[style=mql5style]
+double close = iClose(_Symbol, PERIOD_H1, 0);  // Current bar
+double high = iHigh(_Symbol, PERIOD_H1, 0);
+double low = iLow(_Symbol, PERIOD_H1, 0);
+double open = iOpen(_Symbol, PERIOD_H1, 0);
+datetime time = iTime(_Symbol, PERIOD_H1, 0);
+long volume = iVolume(_Symbol, PERIOD_H1, 0);
+\end{lstlisting}
+
+\subsection{Time Management}
+
+\subsubsection{Current Time}
+\begin{lstlisting}[style=mql5style]
+datetime currentTime = TimeCurrent(); // Server time
+datetime localTime = TimeLocal();     // Local time
+
+MqlDateTime timeStruct;
+TimeToStruct(currentTime, timeStruct);
+int hour = timeStruct.hour;
+int dayOfWeek = timeStruct.day_of_week;
+\end{lstlisting}
+
+\subsubsection{Session Detection}
+\begin{lstlisting}[style=mql5style]
+bool IsAsianSession()
+{
+   MqlDateTime timeStruct;
+   TimeToStruct(TimeCurrent(), timeStruct);
+   return (timeStruct.hour >= 0 && timeStruct.hour < 8);
+}
+\end{lstlisting}
+
+\subsection{Error Handling}
+
+Always check for errors:
+\begin{lstlisting}[style=mql5style]
+if(!trade.Buy(0.1, _Symbol))
+{
+   int error = GetLastError();
+   Print("Trade failed. Error: ", error);
+   Print("Description: ", trade.ResultRetcodeDescription());
+}
+\end{lstlisting}
+
+\subsection{Best Practices}
+
+\begin{enumerate}
+    \item \textbf{Always validate indicator handles}: Check for \texttt{INVALID_HANDLE}
+    \item \textbf{Use ArraySetAsSeries()}: Makes array indexing intuitive (0 = most recent)
+    \item \textbf{Check CopyBuffer() return values}: Ensure data was copied successfully
+    \item \textbf{Release resources}: Free indicator handles in \texttt{OnDeinit()}
+    \item \textbf{Handle errors gracefully}: Check return values and log errors
+    \item \textbf{Optimize OnTick()}: Use new bar detection to avoid redundant processing
+    \item \textbf{Use Magic Numbers}: Identify trades from your EA
+    \item \textbf{Validate stop levels}: Check minimum stop distance requirements
+\end{enumerate}
+
+\subsection{Common Patterns}
+
+\subsubsection{New Bar Detection}
+\begin{lstlisting}[style=mql5style]
+static datetime lastBarTime = 0;
+datetime currentBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+if(currentBarTime == lastBarTime)
+   return; // Same bar
+lastBarTime = currentBarTime;
+// Process new bar
+\end{lstlisting}
+
+\subsubsection{Crossover Detection}
+\begin{lstlisting}[style=mql5style]
+double current = indicator[0];
+double previous = indicator[1];
+
+// Bullish crossover
+bool bullishCross = (previous < level) && (current > level);
+
+// Bearish crossover
+bool bearishCross = (previous > level) && (current < level);
+\end{lstlisting}
+
+\subsubsection{Position Tracking}
+\begin{lstlisting}[style=mql5style]
+bool hasPosition = false;
+for(int i = PositionsTotal() - 1; i >= 0; i--)
+{
+   if(PositionGetSymbol(i) == _Symbol)
+   {
+      hasPosition = true;
+      break;
+   }
+}
+\end{lstlisting}
+
+These fundamentals form the foundation for all Expert Advisors examined in this paper. Understanding these concepts is crucial for implementing and modifying trading algorithms effectively.

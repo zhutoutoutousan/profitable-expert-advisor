@@ -1,0 +1,115 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Page setup
+\geometry{margin=1in}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Algorithmic Trading Strategies: MQL5 and TradingView Implementation}
+
+% Code listing setup for MQL5
+\lstdefinestyle{mql5style}{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    showspaces=false,
+    showstringspaces=false,
+    tabsize=2,
+    captionpos=b
+}
+
+% Code listing setup for Pine Script
+\lstdefinestyle{pinescriptstyle}{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    showspaces=false,
+    showstringspaces=false,
+    tabsize=2,
+    captionpos=b
+}
+
+% Title information
+\title{Algorithmic Trading Strategies:\\
+A Comprehensive Analysis of MQL5 Expert Advisors\\
+and TradingView Pine Script Implementations}
+\author{Algorithmic Trading Research}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper presents a comprehensive analysis of profitable algorithmic trading strategies implemented in both MetaTrader 5 (MQL5) and TradingView Pine Script. We examine multiple Expert Advisors (EAs) utilizing various technical indicators including RSI (Relative Strength Index), EMA (Exponential Moving Average), and Darvas Box theory. The strategies are optimized for different financial instruments including forex pairs (AUD/USD, EUR/USD), precious metals (XAU/USD, XAG/USD), cryptocurrencies (BTC/USD), and equity indices. Through detailed code analysis and strategy rationale, we demonstrate how systematic approaches to technical analysis, risk management, and market timing contribute to profitable trading outcomes. The paper covers fundamental MQL5 programming concepts, strategy implementation details, and the theoretical foundations that make these algorithms profitable in various market conditions.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% Include chapters
+\input{chapters/introduction}
+\input{chapters/mql5_basics}
+\input{chapters/algorithms}
+\input{chapters/tradingview}
+\input{chapters/advanced_techniques}
+\input{chapters/profitability}
+\input{chapters/conclusion}
+
+% Bibliography
+\begin{thebibliography}{99}
+\bibitem{darvas1957}
+Darvas, N. (1957). \textit{How I Made \$2,000,000 in the Stock Market}. Lyle Stuart.
+
+\bibitem{wilder1978}
+Wilder, J. W. (1978). \textit{New Concepts in Technical Trading Systems}. Trend Research.
+
+\bibitem{mql5docs}
+MetaQuotes Software Corp. (2024). \textit{MQL5 Documentation}. \url{https://www.mql5.com/en/docs}
+
+\bibitem{tradingviewdocs}
+TradingView Inc. (2024). \textit{Pine Script Language Reference Manual}. \url{https://www.tradingview.com/pine-script-docs/}
+
+\bibitem{vantharp1998}
+Van Tharp, K. (1998). \textit{Trade Your Way to Financial Freedom}. McGraw-Hill.
+
+\bibitem{connors2012}
+Connors, L. A., \& Alvarez, C. (2012). \textit{High Probability ETF Trading}. TradingMarkets Publishing.
+
+\end{thebibliography}
+
+\end{document}
