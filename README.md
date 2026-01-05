@@ -1,31 +1,157 @@
-# Table of Contents
+# Profitable Expert Advisor Repository
 
-- [Table of Contents](#table-of-contents)
-- [Profitable Expert Advisors (EAs)](#profitable-expert-advisors-eas)
-  - [Available EAs](#available-eas)
-    - [1. RSI Reversal Asian AUD/USD](#1-rsi-reversal-asian-audusd)
-    - [2. RSI MidPoint Hijack XAU/USD](#2-rsi-midpoint-hijack-xauusd)
-    - [3. RSI Reversal Asian EUR/USD](#3-rsi-reversal-asian-eurusd)
-    - [4. RSI CrossOver Reversal XAU/USD](#4-rsi-crossover-reversal-xauusd)
-    - [5. RSI Follow Reverse EMA CrossOver BTC/USD](#5-rsi-follow-reverse-ema-crossover-btcusd)
-    - [6. DarvasBoxXAUUSD](#6-darvasboxxauusd)
-    - [7. EMASlopeDistanceCocktailXAUUSD](#7-emaslopedistancecocktailxauusd)
-  - [Strategy Rationale](#strategy-rationale)
-    - [RSI Reversal Strategy](#rsi-reversal-strategy)
-    - [RSI MidPoint Hijack Strategy](#rsi-midpoint-hijack-strategy)
-    - [RSI CrossOver Reversal Strategy](#rsi-crossover-reversal-strategy)
-    - [Darvas Box Strategy](#darvas-box-strategy)
-    - [EMA Slope Distance Cocktail Strategy](#ema-slope-distance-cocktail-strategy)
-  - [Profitability Factors](#profitability-factors)
-  - [Usage](#usage)
-  - [Disclaimer](#disclaimer)
+A comprehensive collection of algorithmic trading strategies for MetaTrader 5, including production-ready Expert Advisors, machine learning models, and backtesting frameworks.
+
+## Table of Contents
+
+- [Repository Structure](#repository-structure)
+- [Frontline Strategies](#frontline-strategies) - Production-ready EAs
+- [AI & Machine Learning](#ai--machine-learning) - ONNX models for price prediction
+- [Back-Pedal Strategies](#back-pedal-strategies) - Alternative implementations
+- [Backtesting](#backtesting) - Python backtesting framework
+- [Strategy Performance](#strategy-performance)
+- [Quick Start](#quick-start)
+- [Disclaimer](#disclaimer)
+
+## Repository Structure
+
+```
+profitable-expert-advisor/
+├── frontline/           # Production-ready trading strategies
+│   ├── MQL5/           # MetaTrader 5 Expert Advisors
+│   └── tradingview/    # TradingView Pine Script strategies
+├── ai/                 # ONNX machine learning models
+├── back-pedal/         # Alternative/experimental strategies
+├── backtesting/        # Python backtesting framework
+│   ├── MT5/           # MT5 Python backtesting
+│   └── own/           # Custom backtesting tools
+└── paper/              # Research papers and simulations
+```
+
+## Frontline Strategies
+
+**Location**: [`frontline/`](frontline/)
+
+Production-ready Expert Advisors with comprehensive backtesting and performance reports.
+
+### Available Strategies
+
+1. **RSI Scalping Strategies**
+   - RSIScalpingXAUUSD (Gold)
+   - RSIScalpingBTCUSD (Bitcoin)
+   - RSIScalpingMSFT (Microsoft Stock)
+   - RSIScalpingTSLA (Tesla Stock)
+
+2. **Advanced Gold Strategies**
+   - RSICrossOverReversalXAUUSD
+   - RSIMidPointHijackXAUUSD (Multi-strategy system)
+   - EMASlopeDistanceCocktailXAUUSD
+   - DarvasBoxXAUUSD
+
+3. **TradingView Strategies**
+   - SSEEMARSICocktail (Pine Script)
+
+**Performance Reports**: All strategies include detailed HTML reports and PNG charts showing P&L, drawdown, and trade statistics.
+
+📖 **[View Full Frontline Documentation](frontline/README.md)**
+
+## AI & Machine Learning
+
+**Location**: [`ai/`](ai/)
+
+Complete framework for training and deploying ONNX machine learning models in MetaTrader 5.
+
+### Features
+
+- 🧠 LSTM neural networks for price prediction
+- 📊 Technical indicators as features (RSI, EMA, ATR, etc.)
+- 🔄 ONNX export for MQL5 integration
+- 📈 Real-time prediction in Expert Advisors
+
+### Quick Start
+
+```bash
+cd ai
+pip install -r requirements.txt
+python train_onnx_model.py --symbol XAUUSD --timeframe H1
+```
+
+📖 **[View Full AI Documentation](ai/README.md)**
+
+## Back-Pedal Strategies
+
+**Location**: [`back-pedal/`](back-pedal/)
+
+Alternative implementations and experimental strategies for comparison and testing.
+
+### Available Strategies
+
+- RSIScalpingEURUSD
+- RSIScalpingXAGUSD (Silver)
+- RSIScalpingAPPL (Apple Stock)
+- RSIReversalAsianAUDUSD
+- RSIReversalAsianEURUSD
+- RSIFollowReverseEMACrossOverBTCUSD
+
+📖 **[View Back-Pedal Documentation](back-pedal/README.md)**
+
+## Backtesting
+
+**Location**: [`backtesting/`](backtesting/)
+
+### MT5 Python Backtesting
+
+Complete Python framework for backtesting strategies using MetaTrader 5 historical data.
+
+- Base strategy class for easy implementation
+- Multiple indicator support (RSI, EMA, SMA, ATR, MACD)
+- Performance analysis and visualization
+- Example strategies included
+
+📖 **[View Backtesting Documentation](backtesting/MT5/README.md)**
 
 
-# Profitable Expert Advisors (EAs)
+## Strategy Performance
 
-This repository contains a collection of profitable Expert Advisors (EAs) designed for MetaTrader 5. Each EA implements different trading strategies optimized for specific currency pairs and market conditions.
+All strategies include comprehensive performance reports with:
 
-## Available EAs
+- **Equity Curves**: Account balance over time
+- **Drawdown Analysis**: Maximum drawdown periods
+- **Trade Statistics**: Win rate, profit factor, average win/loss
+- **Monthly Performance**: Month-by-month returns
+- **P&L Charts**: Visual profit and loss distribution
+
+### Performance Reports Location
+
+- **Frontline Strategies**: `frontline/MQL5/[StrategyName]/report.png` and `report.html`
+- **Back-Pedal Strategies**: `back-pedal/[StrategyName]/test-balance.png`
+
+## Quick Start
+
+### 1. Choose Your Strategy
+
+- **For Production**: Use strategies from `frontline/MQL5/`
+- **For Experimentation**: Try `back-pedal/` strategies
+- **For ML Trading**: Explore `ai/` ONNX models
+
+### 2. Install and Deploy
+
+1. Copy EA file to MT5 `MQL5/Experts/` directory
+2. Compile in MetaEditor (F7)
+3. Review backtest reports (`report.html` and `report.png`)
+4. Test on demo account
+5. Deploy with appropriate risk management
+
+### 3. Monitor Performance
+
+- Review HTML reports for detailed statistics
+- Check PNG charts for visual performance
+- Monitor live trading metrics
+- Adjust parameters as needed
+
+## Legacy EA Documentation
+
+The following sections document individual EAs from the original collection:
 
 ### 1. RSI Reversal Asian AUD/USD
 - **Strategy**: RSI-based reversal trading during Asian session
@@ -51,9 +177,9 @@ MaxSpread = 1000;        // Maximum allowed spread in pips
 MaxDuration = 140;       // Maximum trade duration in hours
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="RSIReversalAsianAUDUSD/test-balance.jpg" alt="RSI Reversal Asian AUD/USD Test Balance" width="600"/>
+  <img src="back-pedal/RSIReversalAsianAUDUSD/test-balance.png" alt="RSI Reversal Asian AUD/USD Performance" width="600"/>
 </div>
 
 ### 2. RSI MidPoint Hijack XAU/USD
@@ -85,9 +211,9 @@ InpEnableStrategyLock = false;   // Enable Strategy Lock
 InpLockProfitThreshold = 0.0;   // Lock Profit Threshold (pips)
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="RSIMidPointHijackXAUUSD/test-balance.jpg" alt="RSI MidPoint Hijack XAU/USD Test Balance" width="600"/>
+  <img src="frontline/MQL5/RSIMidPointHijackXAUUSD/report.png" alt="RSI MidPoint Hijack XAU/USD Performance" width="600"/>
 </div>
 
 ### 3. RSI Reversal Asian EUR/USD
@@ -113,9 +239,9 @@ MaxDuration = 22;        // Maximum trade duration in hours
 RSIExitLevel = 57;       // RSI level to exit
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="RSIReversalAsianEURUSD/test-balance.jpg" alt="RSI Reversal Asian EUR/USD Test Balance" width="600"/>
+  <img src="back-pedal/RSIReversalAsianEURUSD/test-balance.jpg" alt="RSI Reversal Asian EUR/USD Performance" width="600"/>
 </div>
 
 ### 4. RSI CrossOver Reversal XAU/USD
@@ -142,9 +268,9 @@ emaDistanceThreshold = 165; // EMA distance threshold
 TrailingStop = 295;       // Trailing stop in pips
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="RSICrossOverReversalXAUUSD/test-balance.jpg" alt="RSI CrossOver Reversal XAU/USD Test Balance" width="600"/>
+  <img src="frontline/MQL5/RSICrossOverReversalXAUUSD/report.png" alt="RSI CrossOver Reversal XAU/USD Performance" width="600"/>
 </div>
 
 ### 5. RSI Follow Reverse EMA CrossOver BTC/USD
@@ -183,9 +309,9 @@ InpLockProfitThreshold = 1000;  // Lock Profit Threshold (pips)
 InpCooldownPeriod = 24;         // Cooldown Period in hours
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="RSIFollowReverseEMACrossOverBTCUSD/test-balance.jpg" alt="RSI Follow Reverse EMA CrossOver BTC/USD Test Balance" width="600"/>
+  <img src="back-pedal/RSIFollowReverseEMACrossOverBTCUSD/test-balance.jpg" alt="RSI Follow Reverse EMA CrossOver BTC/USD Performance" width="600"/>
 </div>
 
 ### 6. DarvasBoxXAUUSD
@@ -218,9 +344,9 @@ PrimaryTF = PERIOD_H1;   // Primary timeframe
 SecondaryTF = PERIOD_H4; // Secondary timeframe for confirmation
 ```
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="DarvasBoxXAUUSD/test-balance.jpg" alt="Darvas Box XAU/USD Test Balance" width="600"/>
+  <img src="frontline/MQL5/DarvasBoxXAUUSD/report.png" alt="Darvas Box XAU/USD Performance" width="600"/>
 </div>
 
 ### 7. EMASlopeDistanceCocktailXAUUSD
@@ -266,9 +392,9 @@ tradeCooldownMinutes = 19;  // Trade debounce period
 - Win Rate: 64.65%
 - Total Trades: 2863
 
-**Test Balance Results:**
+**Performance Report:**
 <div align="center">
-  <img src="EMASlopeDistanceCocktailXAUUSD/test-balance.jpg" alt="EMA Slope Distance Cocktail XAU/USD Test Balance" width="600"/>
+  <img src="frontline/MQL5/EMASlopeDistanceCocktailXAUUSD/report.png" alt="EMA Slope Distance Cocktail XAU/USD Performance" width="600"/>
 </div>
 
 ## Strategy Rationale
@@ -352,13 +478,27 @@ These EAs are designed to be profitable in the long run due to:
 
 ## Usage
 
+### For Production Trading
+
+1. **Review Performance Reports**: Check `report.html` and `report.png` in each strategy folder
+2. **Test on Demo**: Always test on demo account first
+3. **Configure Parameters**: Adjust based on your risk tolerance
+4. **Deploy**: Copy EA to MT5 and attach to chart
+5. **Monitor**: Regularly review performance and adjust as needed
+
+### Parameter Configuration
+
 Each EA comes with configurable parameters that can be adjusted based on:
 - Market conditions
 - Risk tolerance
 - Trading style
 - Account size
 
-Please refer to the individual EA files for specific parameter descriptions and recommended settings.
+Please refer to:
+- Individual EA files for parameter descriptions
+- `frontline/README.md` for production strategies
+- `back-pedal/README.md` for alternative implementations
+- `ai/README.md` for machine learning models
 
 ## Disclaimer
 
