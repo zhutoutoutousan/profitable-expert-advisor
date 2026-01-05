@@ -1,0 +1,970 @@
+\section{Advanced Trading Techniques: Mathematical Analysis and Statistical Significance}
+
+This section examines advanced position management and risk management techniques from a quantitative finance perspective, analyzing their mathematical foundations, statistical properties, and practical implementation in MT5 trading systems.
+
+\subsection{Partial Exit Strategies}
+
+\subsubsection{Mathematical Foundation}
+
+Partial exit strategies involve closing a portion of a position while maintaining the remainder. This technique balances profit realization with continued upside potential.
+
+\textbf{Mathematical Formulation:}
+
+Let $P_0$ be the initial position size, $P_e$ be the partial exit size, and $P_r = P_0 - P_e$ be the remaining position. The profit function becomes:
+
+\begin{equation}
+\Pi = P_e \cdot (S_e - S_0) + P_r \cdot (S_f - S_0)
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $S_0$ = Entry price
+    \item $S_e$ = Exit price for partial position
+    \item $S_f$ = Final exit price for remaining position
+\end{itemize}
+
+\textbf{Expected Value Analysis:}
+
+The expected profit with partial exit:
+\begin{equation}
+E[\Pi] = P_e \cdot E[S_e - S_0] + P_r \cdot E[S_f - S_0]
+\end{equation}
+
+If we assume $S_e$ and $S_f$ follow correlated random walks:
+\begin{equation}
+E[\Pi] = P_e \cdot \mu \cdot t_e + P_r \cdot \mu \cdot t_f
+\end{equation}
+
+where $\mu$ is the drift rate and $t_e$, $t_f$ are exit times.
+
+\subsubsection{Statistical Properties}
+
+\textbf{Variance Reduction:}
+
+Partial exits reduce portfolio variance:
+\begin{equation}
+Var(\Pi) = P_e^2 \cdot \sigma^2 \cdot t_e + P_r^2 \cdot \sigma^2 \cdot t_f + 2 \cdot P_e \cdot P_r \cdot \rho \cdot \sigma^2 \cdot \sqrt{t_e \cdot t_f}
+\end{equation}
+
+where $\rho$ is the correlation coefficient between exit prices.
+
+\textbf{Sharpe Ratio Improvement:}
+
+The Sharpe ratio with partial exit:
+\begin{equation}
+SR = \frac{E[\Pi]}{\sqrt{Var(\Pi)}}
+\end{equation}
+
+Partial exits can improve Sharpe ratio by reducing variance while maintaining expected returns.
+
+\subsubsection{Optimal Exit Percentage}
+
+Using Kelly Criterion for optimal partial exit:
+
+\begin{equation}
+f^* = \frac{p \cdot b - q}{b}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $f^*$ = Optimal fraction to exit
+    \item $p$ = Probability of continued profit
+    \item $q = 1 - p$ = Probability of reversal
+    \item $b$ = Profit-to-loss ratio
+\end{itemize}
+
+\subsubsection{Implementation in MT5}
+
+\begin{lstlisting}[style=mql5style, caption=Partial Exit Implementation]
+void PartialExit(double exitPercent, string positionComment)
+{
+   if(!PositionSelect(_Symbol))
+      return;
+   
+   double positionVolume = PositionGetDouble(POSITION_VOLUME);
+   double exitVolume = NormalizeDouble(positionVolume * exitPercent / 100.0, 2);
+   double remainingVolume = positionVolume - exitVolume;
+   
+   if(exitVolume < SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
+      return; // Exit volume too small
+   
+   // Partial close
+   trade.PositionClosePartial(_Symbol, exitVolume);
+   
+   Print("Partial exit: ", exitPercent, "% (", exitVolume, " lots)");
+}
+\end{lstlisting}
+
+\subsection{Trailing Stop Loss}
+
+\subsubsection{Mathematical Model}
+
+A trailing stop loss adjusts the stop price as the position moves favorably, protecting profits while allowing for continued gains.
+
+\textbf{Dynamic Stop Price:}
+
+\begin{equation}
+SL_t = \max(SL_{t-1}, P_t - \Delta)
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $SL_t$ = Stop loss at time $t$
+    \item $P_t$ = Current price at time $t$
+    \item $\Delta$ = Trailing distance
+\end{itemize}
+
+\textbf{For Long Positions:}
+
+\begin{equation}
+SL_t^{long} = \max(SL_{t-1}, P_t - \Delta)
+\end{equation}
+
+\textbf{For Short Positions:}
+
+\begin{equation}
+SL_t^{short} = \min(SL_{t-1}, P_t + \Delta)
+\end{equation}
+
+\subsubsection{Statistical Analysis}
+
+\textbf{Expected Exit Price:}
+
+The trailing stop creates a path-dependent exit. For a geometric Brownian motion price process:
+
+\begin{equation}
+dS_t = \mu S_t dt + \sigma S_t dW_t
+\end{equation}
+
+The trailing stop exit time $\tau$ is a stopping time:
+\begin{equation}
+\tau = \inf\{t \geq 0 : S_t \leq SL_t\}
+\end{equation}
+
+\textbf{Expected Profit:}
+
+\begin{equation}
+E[\Pi] = E[(S_\tau - S_0) \cdot \mathbf{1}_{\tau < T}] + E[(S_T - S_0) \cdot \mathbf{1}_{\tau \geq T}]
+\end{equation}
+
+where $T$ is the maximum holding period.
+
+\subsubsection{Optimal Trailing Distance}
+
+Using volatility-adjusted trailing stops:
+
+\begin{equation}
+\Delta_{optimal} = k \cdot \sigma \cdot \sqrt{\Delta t}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $k$ = Multiplier (typically 2-3)
+    \item $\sigma$ = Volatility (ATR or standard deviation)
+    \item $\Delta t$ = Time period
+\end{itemize}
+
+\subsubsection{ATR-Based Trailing Stop}
+
+\begin{equation}
+ATR_t = \frac{1}{n} \sum_{i=0}^{n-1} TR_{t-i}
+\end{equation}
+
+where True Range:
+\begin{equation}
+TR_t = \max(H_t - L_t, |H_t - C_{t-1}|, |L_t - C_{t-1}|)
+\end{equation}
+
+Trailing stop distance:
+\begin{equation}
+\Delta = multiplier \cdot ATR_t
+\end{equation}
+
+\subsection{Trailing Take Profit}
+
+\subsubsection{Concept}
+
+Trailing take profit adjusts profit targets upward as price moves favorably, allowing profits to run while maintaining exit discipline.
+
+\textbf{Mathematical Formulation:}
+
+For long positions:
+\begin{equation}
+TP_t = \min(TP_{t-1}, P_t + \Delta_{TP})
+\end{equation}
+
+For short positions:
+\begin{equation}
+TP_t = \max(TP_{t-1}, P_t - \Delta_{TP})
+\end{equation}
+
+\subsubsection{Combined Trailing System}
+
+When both trailing stop and trailing take profit are active:
+
+\begin{equation}
+Exit = \begin{cases}
+\text{Stop Loss} & \text{if } P_t \leq SL_t \\
+\text{Take Profit} & \text{if } P_t \geq TP_t \\
+\text{Continue} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsubsection{Expected Value}
+
+\begin{equation}
+E[\Pi] = \int_0^\infty (TP_\tau - S_0) \cdot f_{TP}(\tau) d\tau - \int_0^\infty (S_0 - SL_\tau) \cdot f_{SL}(\tau) d\tau
+\end{equation}
+
+where $f_{TP}$ and $f_{SL}$ are probability density functions of exit times.
+
+\subsection{Martingale Strategy}
+
+\subsubsection{Mathematical Foundation}
+
+The martingale strategy doubles position size after each loss, attempting to recover all previous losses with a single win.
+
+\textbf{Position Sizing:}
+
+After $n$ consecutive losses:
+\begin{equation}
+P_n = P_0 \cdot 2^n
+\end{equation}
+
+\textbf{Required Capital:}
+
+Total capital needed after $n$ losses:
+\begin{equation}
+C_n = \sum_{i=0}^{n} P_0 \cdot 2^i = P_0 \cdot (2^{n+1} - 1)
+\end{equation}
+
+\textbf{Recovery Condition:}
+
+To recover all losses with one win:
+\begin{equation}
+P_n \cdot W = \sum_{i=0}^{n-1} P_i \cdot L
+\end{equation}
+
+where $W$ is the win amount and $L$ is the loss amount.
+
+\subsubsection{Ruin Probability}
+
+The probability of ruin (running out of capital) after $n$ consecutive losses:
+
+\begin{equation}
+P(\text{Ruin}) = \begin{cases}
+1 & \text{if } C_n > \text{Account Balance} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+For a finite account balance $B$:
+\begin{equation}
+P(\text{Ruin}) = P(\text{Consecutive losses} \geq \lfloor \log_2(B/P_0 + 1) \rfloor)
+\end{equation}
+
+\subsubsection{Expected Value Analysis}
+
+Assuming win probability $p$ and loss probability $q = 1-p$:
+
+\begin{equation}
+E[\text{Net Profit}] = p \cdot W - q \cdot L \cdot \frac{2^n - 1}{2^n - 1}
+\end{equation}
+
+For fair game ($p = q = 0.5$):
+\begin{equation}
+E[\text{Net Profit}] = 0
+\end{equation}
+
+\subsubsection{Risk Metrics}
+
+\textbf{Maximum Drawdown:}
+
+\begin{equation}
+MDD = \max_{0 \leq t \leq T} \left( \frac{\text{Peak} - \text{Value}_t}{\text{Peak}} \right)
+\end{equation}
+
+Martingale strategies exhibit high maximum drawdown risk.
+
+\textbf{Kelly Criterion Analysis:}
+
+The Kelly fraction for martingale:
+\begin{equation}
+f^* = \frac{p \cdot b - q}{b} = \frac{0.5 \cdot 1 - 0.5}{1} = 0
+\end{equation}
+
+Kelly criterion suggests \textbf{zero} allocation to pure martingale strategies.
+
+\subsection{Reverse Martingale (Paroli)}
+
+\subsubsection{Strategy Description}
+
+Reverse martingale doubles position size after each \textbf{win}, attempting to compound profits during winning streaks.
+
+\textbf{Position Sizing:}
+
+After $n$ consecutive wins:
+\begin{equation}
+P_n = P_0 \cdot 2^n
+\end{equation}
+
+\textbf{Profit After $n$ Wins:}
+
+\begin{equation}
+\Pi_n = P_0 \cdot (2^n - 1) \cdot W
+\end{equation}
+
+\subsubsection{Statistical Properties}
+
+\textbf{Expected Profit:}
+
+For win probability $p$:
+\begin{equation}
+E[\Pi_n] = \sum_{k=1}^n p^k \cdot (1-p) \cdot P_0 \cdot (2^k - 1) \cdot W
+\end{equation}
+
+\textbf{Variance:}
+
+\begin{equation}
+Var(\Pi_n) = \sum_{k=1}^n p^k \cdot (1-p) \cdot [P_0 \cdot (2^k - 1) \cdot W]^2 - [E[\Pi_n]]^2
+\end{equation}
+
+\subsubsection{Comparison with Martingale}
+
+\begin{table}[H]
+\centering
+\caption{Martingale vs Reverse Martingale}
+\label{tab:martingale_comparison}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Martingale} & \textbf{Reverse Martingale} \\
+\midrule
+Risk & High (unlimited losses) & Limited (bounded by account) \\
+Reward & Limited (recover losses) & High (compound wins) \\
+Ruin Probability & High & Low \\
+Best For & Recovery & Profit maximization \\
+Kelly Fraction & 0 & $> 0$ (if $p > 0.5$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Grid Trading}
+
+\subsubsection{Mathematical Model}
+
+Grid trading places buy and sell orders at regular price intervals, profiting from market oscillations.
+
+\textbf{Grid Structure:}
+
+For a grid with $n$ levels and spacing $\Delta$:
+\begin{equation}
+P_i = P_0 + i \cdot \Delta, \quad i \in \{-n, -n+1, \ldots, -1, 0, 1, \ldots, n\}
+\end{equation}
+
+\textbf{Profit per Grid Level:}
+
+\begin{equation}
+\Pi_{grid} = \Delta \cdot P_{position} - \text{Spread} - \text{Commission}
+\end{equation}
+
+\subsubsection{Expected Profit}
+
+Assuming price follows a mean-reverting process (Ornstein-Uhlenbeck):
+
+\begin{equation}
+dS_t = \theta (\mu - S_t) dt + \sigma dW_t
+\end{equation}
+
+Expected number of grid hits per unit time:
+\begin{equation}
+E[N_{hits}] = \frac{2 \cdot \sigma^2}{\Delta^2 \cdot \theta}
+\end{equation}
+
+Expected profit:
+\begin{equation}
+E[\Pi] = E[N_{hits}] \cdot (\Delta - \text{Costs})
+\end{equation}
+
+\subsubsection{Optimal Grid Spacing}
+
+Maximizing expected profit:
+\begin{equation}
+\frac{\partial E[\Pi]}{\partial \Delta} = 0
+\end{equation}
+
+Solving:
+\begin{equation}
+\Delta_{optimal} = \sqrt{\frac{2 \cdot \text{Costs} \cdot \sigma^2}{\theta}}
+\end{equation}
+
+\subsubsection{Risk Analysis}
+
+\textbf{Maximum Drawdown:}
+
+In trending markets, grid trading can experience significant drawdowns:
+\begin{equation}
+MDD_{grid} = n \cdot \Delta \cdot P_{max}
+\end{equation}
+
+where $P_{max}$ is the maximum position size per grid level.
+
+\textbf{Required Margin:}
+
+\begin{equation}
+Margin_{required} = \sum_{i=-n}^{n} P_i \cdot \text{Margin Rate}
+\end{equation}
+
+\subsection{Cross-Sectional Methods}
+
+\subsubsection{Mean Reversion Strategies}
+
+\textbf{Pairs Trading:}
+
+Identify correlated pairs and trade their spread:
+\begin{equation}
+Spread_t = \log(S_{1,t}) - \beta \cdot \log(S_{2,t})
+\end{equation}
+
+Entry when spread deviates:
+\begin{equation}
+|Spread_t - \mu_{spread}| > k \cdot \sigma_{spread}
+\end{equation}
+
+\textbf{Statistical Arbitrage:}
+
+Using z-score:
+\begin{equation}
+z_t = \frac{Spread_t - \mu_{spread}}{\sigma_{spread}}
+\end{equation}
+
+Trade when $|z_t| > 2$ (2 standard deviations).
+
+\subsubsection{Momentum Strategies}
+
+\textbf{Cross-Sectional Momentum:}
+
+Rank instruments by past returns:
+\begin{equation}
+Rank_i = \text{Rank}(R_{i,t-k:t})
+\end{equation}
+
+Long top decile, short bottom decile:
+\begin{equation}
+w_i = \begin{cases}
++1/N_{long} & \text{if } Rank_i \in \text{Top Decile} \\
+-1/N_{short} & \text{if } Rank_i \in \text{Bottom Decile} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsubsection{Factor Models}
+
+\textbf{Fama-French Factors:}
+
+\begin{equation}
+R_i = \alpha_i + \beta_{MKT} \cdot R_{MKT} + \beta_{SMB} \cdot SMB + \beta_{HML} \cdot HML + \epsilon_i
+\end{equation}
+
+Alpha generation:
+\begin{equation}
+\alpha_i = R_i - (\beta_{MKT} \cdot R_{MKT} + \beta_{SMB} \cdot SMB + \beta_{HML} \cdot HML)
+\end{equation}
+
+\subsection{Alpha Mining Techniques}
+
+\subsubsection{Feature Engineering}
+
+\textbf{Technical Indicators as Features:}
+
+\begin{equation}
+\mathbf{X}_t = [RSI_t, MACD_t, BB_t, ATR_t, Volume_t, \ldots]
+\end{equation}
+
+\textbf{Price-Based Features:}
+
+\begin{equation}
+Returns_t = \frac{P_t - P_{t-1}}{P_{t-1}}
+\end{equation}
+
+\begin{equation}
+Volatility_t = \sqrt{\frac{1}{n} \sum_{i=0}^{n-1} (Returns_{t-i} - \bar{R})^2}
+\end{equation}
+
+\subsubsection{Machine Learning Alpha}
+
+\textbf{Prediction Model:}
+
+\begin{equation}
+\hat{R}_{t+1} = f(\mathbf{X}_t; \theta)
+\end{equation}
+
+where $f$ is a machine learning model (neural network, random forest, etc.).
+
+\textbf{Alpha Signal:}
+
+\begin{equation}
+Signal_t = \begin{cases}
++1 & \text{if } \hat{R}_{t+1} > \theta_{long} \\
+-1 & \text{if } \hat{R}_{t+1} < \theta_{short} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsubsection{Portfolio Construction}
+
+\textbf{Mean-Variance Optimization:}
+
+\begin{equation}
+\max_{\mathbf{w}} \mathbf{w}^T \boldsymbol{\mu} - \lambda \mathbf{w}^T \boldsymbol{\Sigma} \mathbf{w}
+\end{equation}
+
+subject to:
+\begin{equation}
+\sum_{i=1}^n w_i = 1, \quad w_i \geq 0
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\mathbf{w}$ = Portfolio weights
+    \item $\boldsymbol{\mu}$ = Expected returns
+    \item $\boldsymbol{\Sigma}$ = Covariance matrix
+    \item $\lambda$ = Risk aversion parameter
+\end{itemize}
+
+\subsection{Implementation in MT5}
+
+\subsubsection{Trailing Stop Implementation}
+
+\begin{lstlisting}[style=mql5style, caption=Advanced Trailing Stop]
+void UpdateTrailingStop(double trailingDistance, bool useATR = false)
+{
+   if(!PositionSelect(_Symbol))
+      return;
+   
+   double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+   double currentSL = PositionGetDouble(POSITION_SL);
+   ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+   
+   double distance = trailingDistance;
+   if(useATR)
+   {
+      int atrHandle = iATR(_Symbol, PERIOD_CURRENT, 14);
+      double atr[];
+      ArraySetAsSeries(atr, true);
+      CopyBuffer(atrHandle, 0, 0, 1, atr);
+      distance = atr[0] * 2.0; // 2x ATR
+   }
+   
+   double newSL = 0;
+   if(posType == POSITION_TYPE_BUY)
+   {
+      newSL = currentPrice - distance;
+      if(newSL > currentSL && newSL < currentPrice)
+         trade.PositionModify(_Symbol, newSL, PositionGetDouble(POSITION_TP));
+   }
+   else // SELL
+   {
+      newSL = currentPrice + distance;
+      if((newSL < currentSL || currentSL == 0) && newSL > currentPrice)
+         trade.PositionModify(_Symbol, newSL, PositionGetDouble(POSITION_TP));
+   }
+}
+\end{lstlisting}
+
+\subsubsection{Grid Trading Implementation}
+
+\begin{lstlisting}[style=mql5style, caption=Grid Trading System]
+class CGridTrader
+{
+private:
+   double gridSpacing;
+   int gridLevels;
+   double basePrice;
+   
+public:
+   void InitializeGrid(double spacing, int levels)
+   {
+      gridSpacing = spacing;
+      gridLevels = levels;
+      basePrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   }
+   
+   void PlaceGridOrders()
+   {
+      for(int i = -gridLevels; i <= gridLevels; i++)
+      {
+         double price = basePrice + i * gridSpacing;
+         
+         // Place buy order below current price
+         if(i < 0)
+         {
+            trade.BuyLimit(0.01, price, _Symbol, 0, 0, "Grid Buy " + IntegerToString(i));
+         }
+         // Place sell order above current price
+         else if(i > 0)
+         {
+            trade.SellLimit(0.01, price, _Symbol, 0, 0, "Grid Sell " + IntegerToString(i));
+         }
+      }
+   }
+};
+\end{lstlisting}
+
+\subsubsection{Martingale Position Sizing}
+
+\begin{lstlisting}[style=mql5style, caption=Martingale Position Sizing]
+double CalculateMartingaleLotSize(int consecutiveLosses, double baseLot)
+{
+   double lotSize = baseLot * MathPow(2, consecutiveLosses);
+   
+   // Check margin requirements
+   double freeMargin = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+   double requiredMargin = lotSize * SymbolInfoDouble(_Symbol, SYMBOL_MARGIN_INITIAL);
+   
+   if(requiredMargin > freeMargin * 0.9) // Use max 90% of free margin
+   {
+      Print("Warning: Insufficient margin for martingale. Required: ", requiredMargin);
+      return 0; // Don't trade
+   }
+   
+   return NormalizeDouble(lotSize, 2);
+}
+\end{lstlisting}
+
+\subsection{Statistical Significance Testing}
+
+\subsubsection{Backtest Statistics}
+
+\textbf{t-Statistic for Returns:}
+
+\begin{equation}
+t = \frac{\bar{R}}{\sigma_R / \sqrt{n}}
+\end{equation}
+
+where $\bar{R}$ is mean return and $n$ is number of trades.
+
+\textbf{Sharpe Ratio Significance:}
+
+\begin{equation}
+t_{Sharpe} = \frac{SR \cdot \sqrt{T}}{\sqrt{1 + 0.5 \cdot SR^2}}
+\end{equation}
+
+where $T$ is the number of periods.
+
+\subsubsection{Monte Carlo Analysis}
+
+Use Monte Carlo simulation to test strategy robustness:
+
+\begin{equation}
+P(\text{Strategy Profitable}) = \frac{1}{N} \sum_{i=1}^N \mathbf{1}(\Pi_i > 0)
+\end{equation}
+
+where $N$ is the number of simulations.
+
+\subsection{Simulation Results}
+
+The Python simulations provide empirical validation of the theoretical analysis:
+
+\textbf{Martingale Strategy:}
+\begin{itemize}
+    \item High ruin probability (often >50\% with limited capital)
+    \item Exponential capital requirements
+    \item Kelly criterion suggests zero allocation
+    \item Not recommended for risk-averse traders
+\end{itemize}
+
+\textbf{Trailing Stop:}
+\begin{itemize}
+    \item Improves Sharpe ratio compared to fixed stops
+    \item Better protection of profits in trending markets
+    \item Reduces premature exits
+    \item Recommended for trend-following strategies
+\end{itemize}
+
+\textbf{Partial Exits:}
+\begin{itemize}
+    \item Reduces portfolio variance
+    \item Improves risk-adjusted returns
+    \item Optimal exit percentage typically 30-50\%
+    \item Effective risk management tool
+\end{itemize}
+
+\textbf{Grid Trading:}
+\begin{itemize}
+    \item Profitable in mean-reverting markets
+    \item High risk in trending markets
+    \item Optimal spacing depends on volatility
+    \item Requires careful market regime detection
+\end{itemize}
+
+\subsection{Conclusion}
+
+Advanced trading techniques offer various risk-return profiles:
+
+\begin{itemize}
+    \item \textbf{Partial Exits}: Reduce variance, improve Sharpe ratio
+    \item \textbf{Trailing Stops}: Protect profits, allow trends to run
+    \item \textbf{Martingale}: High risk, limited reward (not recommended)
+    \item \textbf{Reverse Martingale}: Lower risk, high reward potential
+    \item \textbf{Grid Trading}: Profitable in ranging markets, risky in trends
+    \item \textbf{Cross-Sectional}: Diversification benefits, factor exposure
+\end{itemize}
+
+The optimal combination depends on market conditions, risk tolerance, and capital constraints. Quantitative analysis and backtesting are essential before live implementation.
+
+\subsection{Figures from Simulations}
+
+The following figures illustrate the statistical properties of these techniques:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/martingale_analysis.png}
+\caption{Martingale Strategy Analysis: Ruin probability, position sizing, and capital requirements}
+\label{fig:martingale}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/trailing_stop_analysis.png}
+\caption{Trailing Stop vs Fixed Stop Comparison: Return distributions and performance metrics}
+\label{fig:trailing_stop}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/partial_exit_analysis.png}
+\caption{Partial Exit Strategy Analysis: Variance reduction and optimal exit percentage}
+\label{fig:partial_exit}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/grid_trading_analysis.png}
+\caption{Grid Trading Analysis: Performance in different market conditions}
+\label{fig:grid_trading}
+\end{figure}
+
+\subsection{Game Theory Analysis: Retail Traders vs Institutional Players}
+
+\subsubsection{Theoretical Foundation}
+
+Financial markets can be modeled as a strategic game between different types of participants. This analysis examines the interaction between retail traders (driven by FOMO and herding behavior) and institutional "big players" (strategic actors with superior capital and information).
+
+\textbf{Key Assumptions:}
+
+\begin{enumerate}
+    \item \textbf{Retail Traders}: Exhibit FOMO (Fear of Missing Out) behavior, herding tendencies, and momentum following
+    \item \textbf{Big Players}: Act strategically to exploit retail behavior, with larger capital and market-moving ability
+    \item \textbf{Finite Games}: Unlike infinite game theory models, real markets have finite rounds (human players have limited patience)
+    \item \textbf{Order Book Impact}: Large trades consume order book depth, creating realistic price impact
+\end{enumerate}
+
+\subsubsection{Mathematical Model}
+
+\textbf{Retail Trader Sentiment Update:}
+
+The sentiment $s_t$ of retail traders evolves as:
+\begin{equation}
+s_t = \lambda \cdot s_{t-1} + (1-\lambda) \cdot [\alpha \cdot \tanh(\Delta P \cdot k_1) + \beta \cdot \tanh(V_{retail} \cdot k_2) + \gamma \cdot \tanh(M \cdot k_3)]
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\lambda$ = Memory decay factor (typically 0.9)
+    \item $\alpha$ = FOMO sensitivity (0.2-0.5)
+    \item $\beta$ = Herding tendency (0.3-0.6)
+    \item $\gamma$ = Momentum component (0.2)
+    \item $\Delta P$ = Price change
+    \item $V_{retail}$ = Retail trading volume
+    \item $M$ = Market momentum
+\end{itemize}
+
+\textbf{Order Book Price Impact:}
+
+Price impact from trading volume through order book:
+\begin{equation}
+\Delta P = \sum_{i=1}^{n} \frac{(i+1) \cdot \delta \cdot V_i}{L_i} + \epsilon \cdot \frac{V_{excess}}{L_{base}}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $n$ = Number of order book levels consumed
+    \item $\delta$ = Price increment per level (0.1-0.2\%)
+    \item $V_i$ = Volume consumed at level $i$
+    \item $L_i$ = Available liquidity at level $i$
+    \item $\epsilon$ = Excess impact coefficient
+    \item $V_{excess}$ = Volume exceeding available liquidity
+\end{itemize}
+
+\textbf{Big Player Strategic Action:}
+
+Big players trade when retail sentiment exceeds threshold:
+\begin{equation}
+Action = \begin{cases}
+\text{Sell} & \text{if } \bar{s}_{retail} > \theta_s \text{ and } V_{retail} > \theta_v \\
+\text{Buy} & \text{if } \bar{s}_{retail} < -\theta_s \text{ and } V_{retail} > \theta_v \\
+\text{Hold} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+where $\theta_s$ is sentiment threshold and $\theta_v$ is volume threshold.
+
+\textbf{Price Update:}
+
+\begin{equation}
+P_{t+1} = P_t \cdot \left(1 + I_{retail} + I_{big} + \kappa \cdot \frac{F - P_t}{P_t} + \sigma \cdot \epsilon_t + \xi_t\right)
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $I_{retail}$ = Retail trading impact
+    \item $I_{big}$ = Big player trading impact
+    \item $\kappa$ = Fundamental mean reversion strength
+    \item $F$ = Fundamental value
+    \item $\sigma$ = Volatility
+    \item $\epsilon_t$ = Random shock
+    \item $\xi_t$ = Fundamental shock
+\end{itemize}
+
+\subsubsection{Genetic Algorithm Optimization}
+
+To find optimal parameters for big players, we employ a genetic algorithm (differential evolution) that maximizes:
+\begin{equation}
+\max_{\mathbf{p}} \quad E[\Pi_{big}] - E[\Pi_{retail}]
+\end{equation}
+
+where $\mathbf{p}$ represents the parameter vector:
+\begin{equation}
+\mathbf{p} = [L_{book}, \theta_s, \theta_v, f_{trade}, \kappa, N_{big}]
+\end{equation}
+
+Parameters optimized:
+\begin{itemize}
+    \item $L_{book}$: Order book liquidity (20-200 units/level)
+    \item $\theta_s$: Sentiment threshold (0.3-0.9)
+    \item $\theta_v$: Volume threshold (10-100 units)
+    \item $f_{trade}$: Trade size as \% of capital (5\%-30\%)
+    \item $\kappa$: Fundamental reversion strength (0.001-0.05)
+    \item $N_{big}$: Number of big players (3-10)
+\end{itemize}
+
+\subsubsection{Key Findings}
+
+\textbf{Exploitation Mechanism:}
+
+The optimization reveals that big players can systematically exploit retail FOMO by:
+\begin{enumerate}
+    \item \textbf{Fading Extreme Sentiment}: Selling when retail is extremely bullish, buying when extremely bearish
+    \item \textbf{Order Book Manipulation}: Lower liquidity allows big players to move markets more effectively
+    \item \textbf{Strategic Timing}: Trading when retail volume exceeds threshold, ensuring sufficient liquidity to exit
+    \item \textbf{Capital Advantage}: Larger trade sizes (15-25\% of capital) create significant price impact
+\end{enumerate}
+
+\textbf{Performance Metrics:}
+
+From 100 independent game simulations:
+\begin{itemize}
+    \item \textbf{Optimal Configuration}: Big players achieve significantly higher win rates (60-80\%) compared to retail (30-50\%)
+    \item \textbf{Profit Difference}: Optimized big players outperform retail by substantial margins
+    \item \textbf{Market Efficiency}: Price deviations from fundamental value indicate market inefficiencies
+    \item \textbf{FOMO Correlation}: Strong positive correlation (0.8+) between retail sentiment and volume confirms herding behavior
+\end{itemize}
+
+\subsubsection{Limitations and Caveats}
+
+\textbf{Model Simplifications:}
+
+\begin{enumerate}
+    \item \textbf{Retail Behavior}: The FOMO/herding model, while capturing key psychological patterns, simplifies the diversity of retail trader strategies
+    \item \textbf{Order Book Model}: The 10-level order book with fixed liquidity is a simplification of real market microstructure
+    \item \textbf{No Information Asymmetry}: The model assumes both sides observe the same price and volume data, though big players have better execution
+    \item \textbf{Finite Games}: While more realistic than infinite games, the 100-round structure may not capture long-term dynamics
+    \item \textbf{Deterministic Strategies}: Big players use fixed rules rather than adaptive learning
+    \item \textbf{No Market Making}: The model doesn't include market makers or high-frequency traders
+    \item \textbf{Simplified PnL}: Position tracking and PnL calculation, while improved, may not fully capture real-world complexities
+\end{enumerate}
+
+\textbf{What the Results Mean:}
+
+\begin{enumerate}
+    \item \textbf{Market Structure Matters}: The order book liquidity parameter significantly affects who profits, demonstrating that market microstructure influences outcomes
+    \item \textbf{Behavioral Exploitation}: Systematic exploitation of retail FOMO is theoretically possible, but requires:
+        \begin{itemize}
+            \item Sufficient capital to move markets
+            \item Accurate sentiment detection
+            \item Optimal timing and sizing
+        \end{itemize}
+    \item \textbf{Finite Game Effects}: Unlike infinite game theory predictions, finite games show different equilibria, with big players able to exploit retail more effectively
+    \item \textbf{Parameter Sensitivity}: Small changes in thresholds and trade sizes significantly impact profitability, highlighting the importance of optimization
+    \item \textbf{Not a Trading Strategy}: This is a theoretical model showing market dynamics, not a practical trading system. Real markets have:
+        \begin{itemize}
+            \item Regulatory constraints
+            \item Transaction costs not fully modeled
+            \item More complex information structures
+            \item Multiple competing big players
+        \end{itemize}
+\end{enumerate}
+
+\textbf{Practical Implications:}
+
+\begin{enumerate}
+    \item \textbf{For Retail Traders}: Understanding FOMO and herding behavior can help avoid being exploited. Strategies should:
+        \begin{itemize}
+            \item Avoid following extreme sentiment
+            \item Use contrarian approaches when sentiment is extreme
+            \item Implement strict risk management
+            \item Avoid herding into crowded trades
+        \end{itemize}
+    \item \textbf{For Algorithmic Traders}: The model suggests:
+        \begin{itemize}
+            \item Sentiment indicators can identify exploitable opportunities
+            \item Order book analysis is crucial for execution
+            \item Position sizing relative to market impact matters
+            \item Timing relative to retail behavior affects profitability
+        \end{itemize}
+    \item \textbf{For Market Regulators}: The results highlight:
+        \begin{itemize}
+            \item Market structure affects fairness
+            \item Retail protection mechanisms may be needed
+            \item Order book transparency matters
+        \end{itemize}
+\end{enumerate}
+
+\subsubsection{Simulation Results}
+
+The following figures illustrate the game theory analysis:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/game_theory_trading.png}
+\caption{Game Theory Analysis: Comprehensive results from 100 independent simulations showing price evolution, sentiment dynamics, PnL distributions, Nash equilibrium analysis, and exploitation metrics. The analysis demonstrates how big players can systematically exploit retail FOMO behavior through strategic trading.}
+\label{fig:game_theory_main}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/game_theory_optimization.png}
+\caption{Genetic Algorithm Optimization Results: The optimal configuration for big players found through differential evolution. Shows parameter space exploration, top configurations, and detailed performance metrics of the optimized strategy.}
+\label{fig:game_theory_optimization}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/game_theory_optimal_vs_default.png}
+\caption{Optimal vs Default Configuration Comparison: Side-by-side comparison showing how the optimized configuration outperforms default parameters. Demonstrates improvements in win rate, profit difference, and overall performance metrics.}
+\label{fig:game_theory_comparison}
+\end{figure}
+
+\subsubsection{Conclusion}
+
+The game theory analysis provides theoretical insights into market dynamics between retail and institutional players. While the model has limitations, it demonstrates:
+
+\begin{enumerate}
+    \item \textbf{Systematic Exploitation is Possible}: Under certain conditions, big players can profit from retail FOMO
+    \item \textbf{Market Structure Matters}: Order book liquidity and execution quality significantly impact outcomes
+    \item \textbf{Behavioral Patterns are Exploitable}: FOMO and herding create predictable patterns that can be systematically traded
+    \item \textbf{Optimization Matters}: Parameter selection dramatically affects profitability
+    \item \textbf{Finite Games Differ}: Real-world finite games show different equilibria than infinite game theory
+\end{enumerate}
+
+However, these results should be interpreted as theoretical insights rather than practical trading strategies. Real markets involve additional complexities including regulatory constraints, transaction costs, information asymmetry, and adaptive behavior that are not fully captured in this model.
