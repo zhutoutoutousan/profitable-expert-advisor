@@ -8,6 +8,7 @@
 #property version   "1.00"
 
 #include <Trade\Trade.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 
 //--- Input parameters
 input ENUM_TIMEFRAMES      TimeFrame = PERIOD_H1; // Timeframe for Analysis
@@ -95,8 +96,8 @@ void OnTick()
    // Check for existing position
    CheckExistingPosition();
    
-   // Check for new entry signals
-   if(!position_open)
+   // Check for new entry signals - only if no position exists for THIS EA (magic number) on THIS symbol
+   if(!position_open && !PositionExistsByMagic(_Symbol, MagicNumber))
    {
       CheckEntrySignals();
    }
@@ -129,8 +130,8 @@ void CheckExistingPosition()
       return;
    }
    
-   // Check if position still exists
-   if(!PositionSelectByTicket(position_ticket))
+   // Check if position still exists with correct magic number AND symbol for THIS EA
+   if(!PositionSelectByTicketSymbolAndMagic(position_ticket, _Symbol, MagicNumber))
    {
       position_open = false;
       position_ticket = 0;
@@ -241,13 +242,31 @@ void CheckEntrySignals()
 //+------------------------------------------------------------------+
 void OpenBuyPosition()
 {
+   // Verify no position exists for THIS EA (magic number) on THIS symbol before opening
+   if(PositionExistsByMagic(_Symbol, MagicNumber))
+   {
+      return; // Position already exists for this EA
+   }
+   
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    
    if(trade.Buy(LotSize, _Symbol, ask, 0, 0, "RSI Scalping Buy"))
    {
-      position_ticket = trade.ResultOrder();
-      position_open = true;
-      current_position_type = POSITION_TYPE_BUY;
+      ulong new_ticket = trade.ResultOrder();
+      if(new_ticket > 0)
+      {
+         // Verify position was opened for THIS EA (magic number) on THIS symbol
+         if(PositionSelectByTicketSymbolAndMagic(new_ticket, _Symbol, MagicNumber))
+         {
+            position_ticket = new_ticket;
+            position_open = true;
+            current_position_type = POSITION_TYPE_BUY;
+         }
+         else
+         {
+            Print("Error: Position opened but doesn't match EA magic number or symbol");
+         }
+      }
    }
 }
 
@@ -256,13 +275,31 @@ void OpenBuyPosition()
 //+------------------------------------------------------------------+
 void OpenSellPosition()
 {
+   // Verify no position exists for THIS EA (magic number) on THIS symbol before opening
+   if(PositionExistsByMagic(_Symbol, MagicNumber))
+   {
+      return; // Position already exists for this EA
+   }
+   
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    
    if(trade.Sell(LotSize, _Symbol, bid, 0, 0, "RSI Scalping Sell"))
    {
-      position_ticket = trade.ResultOrder();
-      position_open = true;
-      current_position_type = POSITION_TYPE_SELL;
+      ulong new_ticket = trade.ResultOrder();
+      if(new_ticket > 0)
+      {
+         // Verify position was opened for THIS EA (magic number) on THIS symbol
+         if(PositionSelectByTicketSymbolAndMagic(new_ticket, _Symbol, MagicNumber))
+         {
+            position_ticket = new_ticket;
+            position_open = true;
+            current_position_type = POSITION_TYPE_SELL;
+         }
+         else
+         {
+            Print("Error: Position opened but doesn't match EA magic number or symbol");
+         }
+      }
    }
 }
 
@@ -271,8 +308,17 @@ void OpenSellPosition()
 //+------------------------------------------------------------------+
 void ClosePosition()
 {
-   if(trade.PositionClose(position_ticket))
+   // Close position using helper that verifies symbol AND magic number for THIS EA
+   if(ClosePositionByMagic(trade, _Symbol, MagicNumber))
    {
+      position_open = false;
+      position_ticket = 0;
+      rsi_against_position = false;
+      bars_against_count = 0;
+   }
+   else
+   {
+      // Position doesn't exist or wrong magic number - reset tracking
       position_open = false;
       position_ticket = 0;
       rsi_against_position = false;

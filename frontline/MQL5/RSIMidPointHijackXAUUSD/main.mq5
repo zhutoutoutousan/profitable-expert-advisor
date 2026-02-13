@@ -9,6 +9,7 @@
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 
 // Input Parameters
 input group "General Settings"
@@ -158,19 +159,12 @@ bool IsWithinTradingHours(int startHour, int endHour)
 }
 
 //+------------------------------------------------------------------+
-//| Check if position exists for given magic number                   |
+//| Check if position exists for given magic number AND symbol       |
 //+------------------------------------------------------------------+
 bool HasPosition(int magic)
 {
-    for(int i = PositionsTotal() - 1; i >= 0; i--)
-    {
-        if(positionInfo.SelectByIndex(i))
-        {
-            if(positionInfo.Magic() == magic)
-                return true;
-        }
-    }
-    return false;
+    // Use helper function that verifies BOTH symbol AND magic number for THIS EA
+    return PositionExistsByMagic(_Symbol, magic);
 }
 
 //+------------------------------------------------------------------+
@@ -572,30 +566,39 @@ void CheckExitConditions()
 //+------------------------------------------------------------------+
 void ClosePosition(int magic)
 {
-    for(int i = PositionsTotal() - 1; i >= 0; i--)
+    // Close position using helper that verifies symbol AND magic number for THIS EA
+    // First check if position exists for this EA on this symbol
+    if(!PositionExistsByMagic(_Symbol, magic))
     {
-        if(positionInfo.SelectByIndex(i))
+        return; // No position for this EA on this symbol
+    }
+    
+    // Get the position ticket for this EA on this symbol
+    ulong ticket = GetPositionTicketByMagic(_Symbol, magic);
+    if(ticket == 0)
+    {
+        return; // No valid ticket found
+    }
+    
+    // Check if this is RSI Reverse position and update cooldown
+    if(magic == InpMagicNumberRSIReverse)
+    {
+        if(PositionSelectByTicketSymbolAndMagic(ticket, _Symbol, magic))
         {
-            if(positionInfo.Magic() == magic)
+            datetime time[];
+            if(CopyTime(_Symbol, InpTimeframe, 0, 1, time) > 0)
             {
-                // Check if this is RSI Reverse position and update cooldown
-                if(magic == InpMagicNumberRSIReverse)
+                rsiReverseLastCloseTime = time[0];
+                // Only enter cooldown if it's a loss or if cooldown on loss is disabled
+                double profit = PositionGetDouble(POSITION_PROFIT);
+                if(!InpRSIReverseCooldownOnLoss || profit < 0)
                 {
-                    datetime time[];
-                    if(CopyTime(_Symbol, InpTimeframe, 0, 1, time) > 0)
-                    {
-                        rsiReverseLastCloseTime = time[0];
-                        // Only enter cooldown if it's a loss or if cooldown on loss is disabled
-                        if(!InpRSIReverseCooldownOnLoss || positionInfo.Profit() < 0)
-                        {
-                            rsiReverseInCooldown = true;
-                        }
-                    }
+                    rsiReverseInCooldown = true;
                 }
-                
-                trade.PositionClose(positionInfo.Ticket());
-                break;
             }
         }
     }
+    
+    // Close the position using helper function
+    ClosePositionByMagic(trade, _Symbol, magic);
 }

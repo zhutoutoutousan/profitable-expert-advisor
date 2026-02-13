@@ -7,6 +7,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include <Trade\Trade.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 //--- Eingabeparameter (Input Parameters) - Optimized Profitable Parameters
 input int    EMA_Periode = 46;           // EMA Periode
 input double PreisSchwelle = 600.0;       // Preisbewegung Schwelle in Pips
@@ -127,7 +128,7 @@ void OnTick()
       Print("Differenz Close-EMA: ", aktueller_close - ema_aktuell);
       Print("Preis-Trigger: ", preis_trigger_aktiv, " Steigungs-Trigger: ", steigung_trigger_aktiv);
       Print("Überwachung aktiv: ", überwachung_aktiv);
-      Print("Position offen: ", PositionSelect(_Symbol));
+      Print("Position offen: ", PositionExistsByMagic(_Symbol, MagicNumber));
          Print("Trades im aktuellen Crossover: ", trades_in_current_crossover, "/", MaxTradesPerCrossover);
    Print("==================");
    }
@@ -289,7 +290,7 @@ void PrüfeTrigger()
          return;
       }
       
-      if(bullish_signal && !PositionSelect(_Symbol))
+      if(bullish_signal && !PositionExistsByMagic(_Symbol, MagicNumber))
       {
          Print("TRACE: Versuche KAUF-Trade zu platzieren (Trade #", trades_in_current_crossover + 1, ")");
          if(PlatziereTrade(ORDER_TYPE_BUY))
@@ -297,7 +298,7 @@ void PrüfeTrigger()
             trades_in_current_crossover++;
          }
       }
-      else if(bearish_signal && !PositionSelect(_Symbol))
+      else if(bearish_signal && !PositionExistsByMagic(_Symbol, MagicNumber))
       {
          Print("TRACE: Versuche VERKAUF-Trade zu platzieren (Trade #", trades_in_current_crossover + 1, ")");
          if(PlatziereTrade(ORDER_TYPE_SELL))
@@ -305,7 +306,7 @@ void PrüfeTrigger()
             trades_in_current_crossover++;
          }
       }
-      else if(PositionSelect(_Symbol))
+      else if(PositionExistsByMagic(_Symbol, MagicNumber))
       {
          Print("TRACE: Position bereits offen - kein neuer Trade");
       }
@@ -361,7 +362,7 @@ bool PlatziereTrade(ENUM_ORDER_TYPE order_type)
 //+------------------------------------------------------------------+
 void VerwalteTrades()
 {
-   if(!PositionSelect(_Symbol))
+   if(!PositionSelectByMagic(_Symbol, MagicNumber))
       return;
    
    double position_profit = PositionGetDouble(POSITION_PROFIT);
@@ -417,7 +418,7 @@ void VerwalteTrades()
    }
    
    //--- Profit-Prüfung nach X Bars (Profit check after X bars)
-   if(CloseUnprofitableTrades && trade_open_time != 0 && PositionSelect(_Symbol))
+   if(CloseUnprofitableTrades && trade_open_time != 0 && PositionExistsByMagic(_Symbol, MagicNumber))
    {
       Print("TRACE: Profit-Prüfung aktiviert - CloseUnprofitableTrades: ", CloseUnprofitableTrades);
       PrüfeProfitNachBars();
@@ -433,7 +434,7 @@ void VerwalteTrades()
 //+------------------------------------------------------------------+
 void PrüfeProfitNachBars()
 {
-   if(!PositionSelect(_Symbol))
+   if(!PositionSelectByMagic(_Symbol, MagicNumber))
    {
       return; // Keine Position offen
    }
@@ -479,7 +480,7 @@ void ÄndereStopLoss(double new_stop_loss)
 {
    Print("TRACE: Versuche Stop Loss zu ändern auf: ", new_stop_loss);
    
-   bool success = trade.PositionModify(_Symbol, new_stop_loss, PositionGetDouble(POSITION_TP));
+   bool success = ModifyPositionByMagic(trade, _Symbol, MagicNumber, new_stop_loss, PositionGetDouble(POSITION_TP));
    
    if(success)
    {
@@ -499,7 +500,7 @@ void SchließePosition(string reason = "Unbekannt")
 {
    Print("TRACE: Versuche Position zu schließen - Grund: ", reason);
    
-   bool success = trade.PositionClose(_Symbol);
+   bool success = ClosePositionByMagic(trade, _Symbol, MagicNumber);
    
    if(success)
    {

@@ -1,5 +1,6 @@
 // Input Parameters
 #include <Trade\Trade.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 
 input group "Trade Management"
 input int MagicNumber = 7;
@@ -125,7 +126,7 @@ void OnTick() {
 
 
     // Ensure there is at least one position
-    bool hasPosition = (PositionsTotal() > 0);
+    bool hasPosition = PositionExistsByMagic(_Symbol, MagicNumber);
 
     
 
@@ -157,7 +158,7 @@ void OnTick() {
     bool isBuyPosition = false;
     bool isSellPosition = false;
     if (hasPosition) {
-        if (PositionSelect(_Symbol)) {
+        if (PositionSelectByMagic(_Symbol, MagicNumber)) {
             int positionType = PositionGetInteger(POSITION_TYPE);
             if (positionType == POSITION_TYPE_BUY) {
                 isBuyPosition = true;
@@ -237,77 +238,56 @@ void OnDeinit(const int reason) {
 
 void Close_Position_MN(ulong magicNumber)
 {  
-    int total = PositionsTotal();
-    for(int i = total - 1; i >= 0; i--)
-    {
-        ulong ticket = PositionGetTicket(i);
-
-        // Use PositionSelect by symbol instead of ticket
-        string symbol = PositionGetSymbol(i);
-        if(PositionSelect(symbol))
-        {
-            if (PositionGetInteger(POSITION_MAGIC) == magicNumber && PositionGetInteger(POSITION_TICKET) == ticket)
-            {
-                if(symbol == _Symbol) // Verify the symbol
-                {
-                    Print("MN " + magicNumber);
-                    trade.PositionClose(ticket);
-                }
-            }
-        }
-        else
-        {
-            int errorCode = GetLastError();
-            Print("aaaa PositionSelect failed with error code: ", errorCode);
-        }
-    }
+    // Use helper function to close position by magic number
+    ClosePositionByMagic(trade, _Symbol, (int)magicNumber);
 }
 
 void ApplyTrailingStop()
 {
       Print("Scanning for trailing stop");
-      for(int i=PositionsTotal()-1; i>=0; i--)
+      
+      // Check if position exists with our magic number
+      if(!PositionSelectByMagic(_Symbol, MagicNumber))
       {
-            string symbol = PositionGetSymbol(i);
-            ulong PositionTicket = PositionGetTicket(i);   
-            long trade_type = PositionGetInteger(POSITION_TYPE);
+         return; // No position with our magic number
+      }
+      
+      ulong PositionTicket = PositionGetInteger(POSITION_TICKET);
+      long trade_type = PositionGetInteger(POSITION_TYPE);
+      string symbol = _Symbol;
             
-            if(!PositionGetInteger(POSITION_MAGIC) == MagicNumber) {
-               return;
-            }
-            
-            double POINT  =       SymbolInfoDouble(  symbol, SYMBOL_POINT  );
-            int    DIGIT  =       (int) SymbolInfoInteger( symbol, SYMBOL_DIGITS );
+      double POINT  = SymbolInfoDouble(symbol, SYMBOL_POINT);
+      int    DIGIT  = (int) SymbolInfoInteger(symbol, SYMBOL_DIGITS);
    
-            
-            if(trade_type == 0)
-            {    
-               double Bid = NormalizeDouble(SymbolInfoDouble(symbol,SYMBOL_BID),DIGIT);
+      if(trade_type == POSITION_TYPE_BUY)
+      {    
+         double Bid = NormalizeDouble(SymbolInfoDouble(symbol, SYMBOL_BID), DIGIT);
                                   
-               if(Bid-PositionGetDouble(POSITION_PRICE_OPEN) > NormalizeDouble(POINT * TrailingStop,DIGIT))
-                 {
-                  if(PositionGetDouble(POSITION_SL) < NormalizeDouble(Bid - POINT * TrailingStop,DIGIT))
-                    {
-                     trade.PositionModify(PositionTicket,NormalizeDouble(Bid - POINT * TrailingStop,DIGIT),PositionGetDouble(POSITION_TP));
-                    }
-                 }
-            
+         if(Bid - PositionGetDouble(POSITION_PRICE_OPEN) > NormalizeDouble(POINT * TrailingStop, DIGIT))
+         {
+            if(PositionGetDouble(POSITION_SL) < NormalizeDouble(Bid - POINT * TrailingStop, DIGIT))
+            {
+               ModifyPositionByMagic(trade, symbol, MagicNumber, 
+                                    NormalizeDouble(Bid - POINT * TrailingStop, DIGIT), 
+                                    PositionGetDouble(POSITION_TP));
             }
-            
-            if(trade_type == 1)
-            {  
-               double Ask = NormalizeDouble(SymbolInfoDouble(symbol,SYMBOL_ASK),DIGIT);
+         }
+      }
+      else if(trade_type == POSITION_TYPE_SELL)
+      {  
+         double Ask = NormalizeDouble(SymbolInfoDouble(symbol, SYMBOL_ASK), DIGIT);
                
-               if((PositionGetDouble(POSITION_PRICE_OPEN) - Ask) > NormalizeDouble( POINT * TrailingStop,DIGIT))
-                 {
-                  if((PositionGetDouble(POSITION_SL) > NormalizeDouble(Ask + POINT * TrailingStop,DIGIT)) || (PositionGetDouble(POSITION_SL)==0))
-                    {
-                     trade.PositionModify(PositionTicket,NormalizeDouble(Ask + POINT * TrailingStop,DIGIT),PositionGetDouble(POSITION_TP));
-                    }
-                 }
-            
+         if((PositionGetDouble(POSITION_PRICE_OPEN) - Ask) > NormalizeDouble(POINT * TrailingStop, DIGIT))
+         {
+            if((PositionGetDouble(POSITION_SL) > NormalizeDouble(Ask + POINT * TrailingStop, DIGIT)) || 
+               (PositionGetDouble(POSITION_SL) == 0))
+            {
+               ModifyPositionByMagic(trade, symbol, MagicNumber, 
+                                   NormalizeDouble(Ask + POINT * TrailingStop, DIGIT), 
+                                   PositionGetDouble(POSITION_TP));
             }
-      }  
+         }
+      }
 }
 
 int TimeHour(datetime when=0){ if(when == 0) when = TimeCurrent();
