@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBERPUNK POLYMARKET | Trading Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="cyberpunk-container">
+        <!-- Header -->
+        <header class="cyberpunk-header">
+            <div class="glitch" data-text="POLYMARKET">POLYMARKET</div>
+            <div class="subtitle">CYBERPUNK TRADING INTERFACE</div>
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">OFFLINE</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard-grid">
+            <!-- Left Panel: Strategy Control -->
+            <div class="panel strategy-panel">
+                <div class="panel-header">
+                    <h2>STRATEGY CONTROL</h2>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="panel-content">
+                    <div class="control-group">
+                        <label>THRESHOLD</label>
+                        <input type="range" id="threshold" min="0.05" max="0.3" step="0.01" value="0.15">
+                        <span id="thresholdValue">0.15</span>
+                    </div>
+                    <div class="control-group">
+                        <label>MIN CONFIDENCE</label>
+                        <input type="range" id="confidence" min="0.5" max="1.0" step="0.05" value="0.7">
+                        <span id="confidenceValue">0.70</span>
+                    </div>
+                    <div class="control-group">
+                        <label>INITIAL BALANCE</label>
+                        <input type="number" id="balance" value="1000" min="100" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>CATEGORY</label>
+                        <select id="category">
+                            <option value="21">CRYPTO</option>
+                            <option value="1">POLITICS</option>
+                            <option value="2">SPORTS</option>
+                        </select>
+                    </div>
+                    <button id="startBtn" class="cyber-button start-btn">
+                        <span>▶ START TRADING</span>
+                    </button>
+                    <button id="stopBtn" class="cyber-button stop-btn" disabled>
+                        <span>⏹ STOP TRADING</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center: Market Data -->
+            <div class="panel markets-panel">
+                <div class="panel-header">
+                    <h2>ACTIVE MARKETS</h2>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="panel-content">
+                    <div id="marketsList" class="markets-list">
+                        <div class="loading">LOADING MARKETS...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Performance -->
+            <div class="panel performance-panel">
+                <div class="panel-header">
+                    <h2>PERFORMANCE METRICS</h2>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="panel-content">
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">BALANCE</div>
+                            <div class="metric-value" id="balanceValue">$0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">EQUITY</div>
+                            <div class="metric-value" id="equityValue">$0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">POSITIONS</div>
+                            <div class="metric-value" id="positionsValue">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">TOTAL TRADES</div>
+                            <div class="metric-value" id="tradesValue">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">WIN RATE</div>
+                            <div class="metric-value" id="winRateValue">0%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">NET P&L</div>
+                            <div class="metric-value" id="pnlValue">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Left: Positions -->
+            <div class="panel positions-panel">
+                <div class="panel-header">
+                    <h2>OPEN POSITIONS</h2>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="panel-content">
+                    <div id="positionsList" class="positions-list">
+                        <div class="empty-state">NO OPEN POSITIONS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Right: Backtesting (Full Column) -->
+            <div class="panel backtest-panel full-width">
+                <div class="panel-header">
+                    <h2>BACKTESTING</h2>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="panel-content">
+                    <div class="backtest-controls">
+                        <div class="control-group">
+                            <label>START DATE</label>
+                            <input type="date" id="backtestStart" value="">
+                        </div>
+                        <div class="control-group">
+                            <label>END DATE</label>
+                            <input type="date" id="backtestEnd" value="">
+                        </div>
+                        <div class="control-group">
+                            <label>INITIAL BALANCE</label>
+                            <input type="number" id="backtestBalance" value="1000" min="100" step="100">
+                        </div>
+                        <button id="runBacktestBtn" class="cyber-button backtest-btn">
+                            <span>▶ RUN BACKTEST</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Terminal Output -->
+                    <div class="terminal-panel">
+                        <div class="terminal-header">
+                            <span>TERMINAL OUTPUT</span>
+                            <button id="clearTerminalBtn" class="terminal-btn">CLEAR</button>
+                        </div>
+                        <div id="terminalOutput" class="terminal-output">
+                            <div class="terminal-line">[SYSTEM] Ready for backtest...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Real-time Chart -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <span>EQUITY CURVE</span>
+                            <div class="chart-stats">
+                                <span id="realtimeEquity">$1000.00</span>
+                                <span id="realtimePnL" class="pnl-positive">+$0.00</span>
+                            </div>
+                        </div>
+                        <canvas id="realtimeChart" width="600" height="250"></canvas>
+                    </div>
+                    
+                    <!-- Real-time Trades List -->
+                    <div class="trades-panel">
+                        <div class="trades-header">
+                            <span>RECENT TRADES</span>
+                            <span id="tradesCount">0 trades</span>
+                        </div>
+                        <div id="tradesList" class="trades-list">
+                            <div class="empty-state">No trades yet</div>
+                        </div>
+                    </div>
+                    
+                    <div id="backtestResults" class="backtest-results" style="display: none;">
+                        <div class="backtest-metrics">
+                            <div class="metric-row">
+                                <span class="metric-label">Total Return:</span>
+                                <span class="metric-value" id="backtestReturn">0%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Total Trades:</span>
+                                <span class="metric-value" id="backtestTrades">0</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Win Rate:</span>
+                                <span class="metric-value" id="backtestWinRate">0%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Sharpe Ratio:</span>
+                                <span class="metric-value" id="backtestSharpe">0.00</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Max Drawdown:</span>
+                                <span class="metric-value" id="backtestDrawdown">0%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Final Equity:</span>
+                                <span class="metric-value" id="backtestEquity">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="backtestStatus" class="backtest-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Background Effects -->
+        <div class="grid-background"></div>
+        <div class="particles"></div>
+    </div>
+
+    <!-- Load Socket.IO first -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Load application modules -->
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

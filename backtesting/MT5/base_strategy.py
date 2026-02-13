@@ -120,9 +120,17 @@ class BaseStrategy(ABC):
         # Validate volume
         volume = max(self.min_lot_size, min(volume, self.max_lot_size))
         
-        # Calculate margin requirement (simplified)
-        contract_size = 100000  # Standard lot size
-        margin_required = volume * contract_size * price * 0.01  # 1% margin (adjust as needed)
+        # Calculate margin requirement
+        # For XAUUSD (Gold): 1 lot = 100 oz, typical margin 1-2% of contract value
+        # For Forex pairs: 1 lot = 100,000 units, typical margin 1-2%
+        if 'XAU' in self.symbol or 'GOLD' in self.symbol:
+            contract_size = 100  # 1 lot = 100 oz for gold
+            margin_percent = 0.02  # 2% margin for gold (more volatile)
+        else:
+            contract_size = 100000  # Standard forex lot size
+            margin_percent = 0.01  # 1% margin for forex
+        
+        margin_required = volume * contract_size * price * margin_percent
         
         if margin_required > self.equity * 0.9:  # Don't use more than 90% of equity
             return False

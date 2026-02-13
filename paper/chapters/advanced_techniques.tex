@@ -968,3 +968,536 @@ The game theory analysis provides theoretical insights into market dynamics betw
 \end{enumerate}
 
 However, these results should be interpreted as theoretical insights rather than practical trading strategies. Real markets involve additional complexities including regulatory constraints, transaction costs, information asymmetry, and adaptive behavior that are not fully captured in this model.
+
+\subsection{Multi-Strategy Consolidation and Intelligent Suppression}
+
+\subsubsection{Theoretical Foundation}
+
+Modern algorithmic trading systems often employ multiple strategies simultaneously to diversify risk and adapt to changing market conditions. However, running multiple strategies independently can lead to conflicting positions and suboptimal capital allocation. This section presents a mathematical framework for consolidating multiple trading strategies with an intelligent suppression mechanism that prioritizes more profitable strategies.
+
+\textbf{Problem Statement:}
+
+Given $n$ trading strategies $\{S_1, S_2, \ldots, S_n\}$ operating on the same instrument, we seek to:
+\begin{enumerate}
+    \item Track individual strategy performance independently
+    \item Prevent conflicting positions (e.g., one strategy buying while another sells)
+    \item Dynamically suppress less profitable strategies when they conflict with more profitable ones
+    \item Allow strategies to coexist when they agree on direction
+\end{enumerate}
+
+\subsubsection{Performance Metrics and Suppression Scoring}
+
+\textbf{Strategy Performance Vector:}
+
+For each strategy $S_i$, we track a performance vector:
+\begin{equation}
+\mathbf{P}_i = [\pi_i, w_i, l_i, r_i, \rho_i, \tau_i]
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\pi_i$ = Net profit (absolute)
+    \item $w_i$ = Number of winning trades
+    \item $l_i$ = Number of losing trades
+    \item $r_i$ = Win rate = $\frac{w_i}{w_i + l_i}$
+    \item $\rho_i$ = Profitability percentage = $\frac{\pi_i}{B} \times 100\%$ (where $B$ is account balance)
+    \item $\tau_i$ = Total number of trades
+\end{itemize}
+
+\textbf{Suppression Score Calculation:}
+
+The suppression score $s_i \in [0, 1]$ quantifies a strategy's ability to suppress others:
+
+\begin{equation}
+s_i = f(\rho_i, r_i, \mathbf{1}_{pos_i})
+\end{equation}
+
+where $\mathbf{1}_{pos_i}$ is an indicator function for whether strategy $i$ has an open position.
+
+The suppression score is computed as:
+\begin{equation}
+s_i = \underbrace{\frac{\rho_i - \rho_{min}}{\rho_{max} - \rho_{min}}}_{\text{Profitability Component}} \times \underbrace{(0.5 + 0.5 \cdot r_i)}_{\text{Win Rate Component}} \times \underbrace{(1 + 0.5 \cdot \mathbf{1}_{pos_i})}_{\text{Position Boost}}
+\end{equation}
+
+where $\rho_{min} = \min_j \rho_j$ and $\rho_{max} = \max_j \rho_j$ are the minimum and maximum profitability across all strategies.
+
+\textbf{Normalization:}
+
+To ensure $s_i \in [0, 1]$:
+\begin{equation}
+s_i = \min\left(1.0, \frac{s_i^{raw}}{s_{max}^{raw}}\right)
+\end{equation}
+
+where $s_{max}^{raw}$ is the maximum raw suppression score.
+
+\subsubsection{Conflict Detection and Suppression Logic}
+
+\textbf{Position Conflict Matrix:}
+
+Define a conflict matrix $\mathbf{C}$ where:
+\begin{equation}
+C_{ij} = \begin{cases}
+1 & \text{if strategies } i \text{ and } j \text{ have opposite positions} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+For positions $pos_i, pos_j \in \{BUY, SELL, NONE\}$:
+\begin{equation}
+C_{ij} = \mathbf{1}[(pos_i = BUY \land pos_j = SELL) \lor (pos_i = SELL \land pos_j = BUY)]
+\end{equation}
+
+\textbf{Suppression Condition:}
+
+Strategy $i$ suppresses strategy $j$ if:
+\begin{equation}
+\text{Suppress}(i, j) = \begin{cases}
+\text{True} & \text{if } C_{ij} = 1 \land \Delta\rho_{ij} \geq \theta \land \rho_i \geq \rho_{min} \\
+\text{False} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $\Delta\rho_{ij} = \rho_i - \rho_j$ is the profitability difference
+    \item $\theta$ is the suppression threshold (e.g., 0.5\%)
+    \item $\rho_{min}$ is the minimum profitability required to suppress others
+\end{itemize}
+
+\textbf{Suppression Strength:}
+
+The strength of suppression is proportional to the profitability difference:
+\begin{equation}
+\text{Strength}_{ij} = s_i \times \frac{\Delta\rho_{ij}}{\Delta\rho_{ij} + \theta}
+\end{equation}
+
+Strategy $j$ is suppressed if $\text{Strength}_{ij} > \lambda$, where $\lambda$ is a minimum suppression threshold (e.g., 0.3).
+
+\subsubsection{Dynamic Suppression with Decay}
+
+\textbf{Suppression State:}
+
+Each strategy maintains a suppression state $\sigma_i \in [0, 1]$ where:
+\begin{itemize}
+    \item $\sigma_i = 0$: Strategy is active
+    \item $\sigma_i > 0$: Strategy is suppressed (higher = more suppressed)
+\end{itemize}
+
+\textbf{Suppression Update:}
+
+The suppression state evolves as:
+\begin{equation}
+\sigma_j^{t+1} = \begin{cases}
+\min(1.0, \text{Strength}_{ij}) & \text{if Suppress}(i, j) = \text{True} \\
+\sigma_j^t \times \delta & \text{otherwise (decay)}
+\end{cases}
+\end{equation}
+
+where $\delta \in [0, 1]$ is the decay factor (e.g., 0.8). This allows suppressed strategies to recover over time.
+
+\textbf{Position Blocking:}
+
+A suppressed strategy cannot open new positions. The blocking condition:
+\begin{equation}
+\text{CanTrade}_j = \begin{cases}
+\text{False} & \text{if } \sigma_j > 0 \\
+\text{False} & \text{if } \exists i: \text{Suppress}(i, j) \land \text{OppositeDirection}(pos_i, desired_j) \\
+\text{True} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsubsection{Expected Value Analysis}
+
+\textbf{Portfolio Performance:}
+
+The consolidated system's expected profit:
+\begin{equation}
+E[\Pi_{total}] = \sum_{i=1}^n E[\Pi_i] \times (1 - \sigma_i) \times \mathbf{1}[\text{CanTrade}_i]
+\end{equation}
+
+where $E[\Pi_i]$ is the expected profit of strategy $i$ when active.
+
+\textbf{Variance Reduction:}
+
+Suppression reduces portfolio variance by preventing conflicting positions:
+\begin{equation}
+\text{Var}(\Pi_{total}) = \sum_{i=1}^n \text{Var}(\Pi_i) \times (1 - \sigma_i)^2 + \sum_{i \neq j} \text{Cov}(\Pi_i, \Pi_j) \times (1 - \sigma_i)(1 - \sigma_j) \times (1 - C_{ij})
+\end{equation}
+
+The term $(1 - C_{ij})$ ensures conflicting strategies don't contribute to covariance.
+
+\textbf{Sharpe Ratio Improvement:}
+
+The consolidated Sharpe ratio:
+\begin{equation}
+SR_{consolidated} = \frac{E[\Pi_{total}]}{\sqrt{\text{Var}(\Pi_{total})}}
+\end{equation}
+
+By reducing variance through suppression, the Sharpe ratio can improve even if expected returns remain similar.
+
+\subsubsection{Implementation Architecture}
+
+\textbf{Strategy Manager Structure:}
+
+The consolidated system maintains:
+\begin{itemize}
+    \item \textbf{Performance Tracker}: Evaluates each strategy periodically (every $N$ bars)
+    \item \textbf{Suppression Engine}: Calculates suppression scores and applies suppression logic
+    \item \textbf{Position Monitor}: Tracks open positions for each strategy
+    \item \textbf{Conflict Resolver}: Prevents conflicting positions and closes them when suppression occurs
+\end{itemize}
+
+\textbf{Evaluation Period:}
+
+Performance evaluation occurs at intervals:
+\begin{equation}
+t_{eval} = t_0 + k \cdot \Delta t_{eval}, \quad k \in \mathbb{N}
+\end{equation}
+
+where $\Delta t_{eval}$ is the evaluation interval (e.g., 50 bars).
+
+\textbf{Minimum Trades Requirement:}
+
+To ensure statistical significance, suppression only applies if:
+\begin{equation}
+\tau_i \geq \tau_{min}
+\end{equation}
+
+where $\tau_{min}$ is the minimum number of trades required (e.g., 5 trades).
+
+\subsubsection{Mathematical Properties}
+
+\textbf{Convergence:}
+
+Under stable market conditions, the suppression system converges to a steady state where:
+\begin{equation}
+\lim_{t \to \infty} \sigma_i^t = \begin{cases}
+0 & \text{if strategy } i \text{ is consistently profitable} \\
+1 & \text{if strategy } i \text{ is consistently unprofitable and conflicts with profitable strategies}
+\end{cases}
+\end{equation}
+
+\textbf{Adaptability:}
+
+The system adapts to changing market conditions. If a previously suppressed strategy becomes profitable:
+\begin{equation}
+\lim_{t \to \infty} \sigma_i^t = 0 \quad \text{as } \rho_i \to \rho_{max}
+\end{equation}
+
+\textbf{Efficiency:}
+
+The suppression mechanism ensures capital is allocated to the most profitable strategies:
+\begin{equation}
+\text{Capital Allocation}_i = \frac{s_i}{\sum_{j=1}^n s_j \times (1 - \sigma_j)}
+\end{equation}
+
+\subsubsection{Implementation in MQL5}
+
+\textbf{Strategy Performance Structure:}
+
+\begin{lstlisting}[style=mql5style, caption=Strategy Performance Tracking]
+struct StrategyPerformance
+{
+   int magic_number;
+   bool is_active;
+   bool is_paused;
+   bool is_suppressed;
+   int total_trades;
+   int winning_trades;
+   int losing_trades;
+   double net_profit;
+   double profit_percent;
+   double suppression_score;
+   ENUM_POSITION_TYPE current_position_type;
+   bool has_open_position;
+   ulong current_position_ticket;
+   double suppression_effectiveness;
+};
+\end{lstlisting}
+
+\textbf{Suppression Score Calculation:}
+
+\begin{lstlisting}[style=mql5style, caption=Suppression Score Calculation]
+void CalculateSuppressionScores()
+{
+   // Find min/max profitability
+   double max_profit = 0, min_profit = 0;
+   for(int i = 0; i < num_strategies; i++)
+   {
+      if(strategies[i].profit_percent > max_profit)
+         max_profit = strategies[i].profit_percent;
+      if(strategies[i].profit_percent < min_profit)
+         min_profit = strategies[i].profit_percent;
+   }
+   
+   double range = max_profit - min_profit;
+   if(range < 0.01) range = 0.01; // Avoid division by zero
+   
+   // Calculate suppression scores
+   for(int i = 0; i < num_strategies; i++)
+   {
+      // Normalize profitability (0-1)
+      double normalized_profit = (strategies[i].profit_percent - min_profit) / range;
+      
+      // Base score from profitability
+      double base_score = MathMax(0.0, MathMin(1.0, normalized_profit));
+      
+      // Boost if has open position and is profitable
+      if(strategies[i].has_open_position && 
+         strategies[i].profit_percent >= MinProfitabilityForSuppression)
+      {
+         base_score = MathMin(1.0, base_score * 1.5);
+      }
+      
+      // Boost based on win rate
+      if(strategies[i].total_trades > 0)
+      {
+         double win_rate = (double)strategies[i].winning_trades / 
+                          strategies[i].total_trades;
+         base_score = base_score * (0.5 + win_rate * 0.5);
+      }
+      
+      strategies[i].suppression_score = base_score;
+      
+      // Calculate suppression effectiveness
+      if(strategies[i].profit_percent >= MinProfitabilityForSuppression)
+         strategies[i].suppression_effectiveness = base_score;
+      else
+         strategies[i].suppression_effectiveness = 0.0;
+   }
+}
+\end{lstlisting}
+
+\textbf{Suppression Application:}
+
+\begin{lstlisting}[style=mql5style, caption=Apply Strategy Suppression]
+void ApplyStrategySuppression()
+{
+   // Reset suppression with decay
+   for(int i = 0; i < num_strategies; i++)
+   {
+      if(strategies[i].is_suppressed)
+      {
+         strategies[i].suppression_effectiveness *= SuppressionDecayFactor;
+         if(strategies[i].suppression_effectiveness < 0.1)
+         {
+            strategies[i].is_suppressed = false;
+            strategies[i].suppression_effectiveness = 0.0;
+         }
+      }
+   }
+   
+   // Check for conflicts and apply suppression
+   for(int i = 0; i < num_strategies; i++)
+   {
+      if(!strategies[i].is_active || strategies[i].is_paused) continue;
+      if(strategies[i].suppression_effectiveness < 0.1) continue;
+      if(!strategies[i].has_open_position && SuppressOnOpenPosition) continue;
+      
+      for(int j = 0; j < num_strategies; j++)
+      {
+         if(i == j) continue;
+         if(!strategies[j].is_active || strategies[j].is_paused) continue;
+         if(strategies[j].is_suppressed) continue;
+         
+         // Check for opposite positions
+         bool has_conflict = false;
+         if(strategies[i].has_open_position && strategies[j].has_open_position)
+         {
+            if((strategies[i].current_position_type == POSITION_TYPE_BUY && 
+                strategies[j].current_position_type == POSITION_TYPE_SELL) ||
+               (strategies[i].current_position_type == POSITION_TYPE_SELL && 
+                strategies[j].current_position_type == POSITION_TYPE_BUY))
+            {
+               has_conflict = true;
+            }
+         }
+         
+         if(has_conflict)
+         {
+            double profit_diff = strategies[i].profit_percent - 
+                                strategies[j].profit_percent;
+            
+            if(profit_diff >= SuppressionThreshold)
+            {
+               double suppression_strength = strategies[i].suppression_effectiveness * 
+                                            (profit_diff / (profit_diff + SuppressionThreshold));
+               
+               if(suppression_strength > 0.3)
+               {
+                  strategies[j].is_suppressed = true;
+                  strategies[j].suppression_effectiveness = 1.0 - suppression_strength;
+                  
+                  // Close conflicting position
+                  if(strategies[j].has_open_position)
+                  {
+                     trade.PositionClose(strategies[j].current_position_ticket);
+                     strategies[j].has_open_position = false;
+                  }
+               }
+            }
+         }
+      }
+   }
+}
+\end{lstlisting}
+
+\textbf{Position Blocking:}
+
+\begin{lstlisting}[style=mql5style, caption=Check if Strategy Can Open Position]
+bool CanStrategyOpenPosition(int strategy_index, ENUM_POSITION_TYPE desired_type)
+{
+   if(strategy_index < 0 || strategy_index >= num_strategies) return false;
+   if(strategies[strategy_index].is_suppressed) return false;
+   
+   // Check if any more profitable strategy would suppress this
+   if(EnableSuppression)
+   {
+      for(int i = 0; i < num_strategies; i++)
+      {
+         if(i == strategy_index) continue;
+         if(!strategies[i].is_active || strategies[i].is_paused) continue;
+         
+         if(strategies[i].has_open_position)
+         {
+            bool is_opposite = false;
+            if((strategies[i].current_position_type == POSITION_TYPE_BUY && 
+                desired_type == POSITION_TYPE_SELL) ||
+               (strategies[i].current_position_type == POSITION_TYPE_SELL && 
+                desired_type == POSITION_TYPE_BUY))
+            {
+               is_opposite = true;
+            }
+            
+            if(is_opposite)
+            {
+               double profit_diff = strategies[i].profit_percent - 
+                                   strategies[strategy_index].profit_percent;
+               
+               if(profit_diff >= SuppressionThreshold && 
+                  strategies[i].profit_percent >= MinProfitabilityForSuppression)
+               {
+                  return false; // Suppressed
+               }
+            }
+         }
+      }
+   }
+   
+   return true;
+}
+\end{lstlisting}
+
+\subsubsection{Performance Benefits}
+
+\textbf{Capital Efficiency:}
+
+By suppressing conflicting positions from less profitable strategies, capital is allocated more efficiently:
+\begin{equation}
+\text{Efficiency Gain} = \frac{\sum_{i=1}^n \pi_i \times (1 - \sigma_i)}{\sum_{i=1}^n \pi_i}
+\end{equation}
+
+\textbf{Risk Reduction:}
+
+Suppression reduces portfolio risk by:
+\begin{enumerate}
+    \item Eliminating conflicting positions that hedge each other
+    \item Concentrating capital in more profitable strategies
+    \item Reducing drawdowns from unprofitable strategies
+\end{enumerate}
+
+\textbf{Adaptive Behavior:}
+
+The system automatically adapts to market conditions:
+\begin{itemize}
+    \item In trending markets, trend-following strategies suppress mean-reversion strategies
+    \item In ranging markets, mean-reversion strategies suppress trend-following strategies
+    \item The system finds the optimal strategy mix for current conditions
+\end{itemize}
+
+\subsubsection{Case Study: Five-Strategy Consolidation}
+
+Consider a system with five strategies on BTCUSD:
+\begin{enumerate}
+    \item \textbf{Momentum Divergence}: Detects price/momentum divergences
+    \item \textbf{Volume Spike}: Trades on sudden volume surges
+    \item \textbf{Order Flow}: Uses bid/ask volume imbalance
+    \item \textbf{Mean Reversion}: Trades bounces from moving averages
+    \item \textbf{Bollinger Squeeze}: Trades breakouts from low volatility
+\end{enumerate}
+
+\textbf{Scenario 1: Trending Market}
+
+In a strong uptrend:
+\begin{itemize}
+    \item Momentum Divergence: +3.5\% profit, BUY position
+    \item Volume Spike: +2.1\% profit, BUY position
+    \item Order Flow: +1.8\% profit, BUY position
+    \item Mean Reversion: -0.5\% profit, wants to SELL
+    \item Bollinger Squeeze: +0.9\% profit, BUY position
+\end{itemize}
+
+\textbf{Suppression Result:}
+\begin{itemize}
+    \item Mean Reversion is suppressed (conflicts with profitable BUY strategies)
+    \item Cannot open SELL position
+    \item System maintains alignment with trend
+\end{itemize}
+
+\textbf{Scenario 2: Ranging Market}
+
+In a ranging market:
+\begin{itemize}
+    \item Momentum Divergence: -1.2\% profit, wants to BUY
+    \item Volume Spike: -0.8\% profit, wants to SELL
+    \item Order Flow: -0.3\% profit, no position
+    \item Mean Reversion: +2.8\% profit, BUY position
+    \item Bollinger Squeeze: -0.5\% profit, no position
+\end{itemize}
+
+\textbf{Suppression Result:}
+\begin{itemize}
+    \item Mean Reversion suppresses Momentum Divergence and Volume Spike
+    \item System focuses on mean reversion, which is profitable in ranging markets
+\end{itemize}
+
+\subsubsection{Limitations and Considerations}
+
+\textbf{Evaluation Lag:}
+
+Performance evaluation occurs periodically, creating a lag between actual performance and suppression decisions. This can be mitigated by:
+\begin{itemize}
+    \item Shorter evaluation intervals (more frequent updates)
+    \item Real-time position conflict detection
+    \item Weighted recent performance more heavily
+\end{itemize}
+
+\textbf{Over-Suppression Risk:}
+
+Aggressive suppression might prevent profitable strategies from trading during temporary drawdowns. Solutions:
+\begin{itemize}
+    \item Minimum profitability threshold before suppression
+    \item Decay mechanism allows recovery
+    \item Separate pause mechanism for truly unprofitable strategies
+\end{itemize}
+
+\textbf{Correlation Assumptions:}
+
+The model assumes strategies can be evaluated independently. In reality:
+\begin{itemize}
+    \item Strategies may share similar entry/exit logic
+    \item Market conditions affect all strategies simultaneously
+    \item Correlation between strategy returns should be considered
+\end{itemize}
+
+\subsubsection{Conclusion}
+
+The multi-strategy consolidation with intelligent suppression provides a mathematical framework for:
+\begin{enumerate}
+    \item \textbf{Dynamic Capital Allocation}: Automatically allocates capital to most profitable strategies
+    \item \textbf{Conflict Resolution}: Prevents conflicting positions that reduce efficiency
+    \item \textbf{Adaptive Behavior}: Responds to changing market conditions
+    \item \textbf{Risk Management}: Reduces portfolio risk through intelligent suppression
+\end{enumerate}
+
+This approach represents an evolution from static multi-strategy systems to dynamic, adaptive portfolio management in algorithmic trading. The mathematical foundations ensure systematic decision-making while the decay mechanism allows for recovery and adaptation.

@@ -19,7 +19,7 @@ input double              RSI_Target_Buy = 87;         // RSI Target for Buy Exi
 input double              RSI_Target_Sell = 33;        // RSI Target for Sell Exit
 input int                 BarsToWait = 1;             // Bars to wait when RSI goes against position
 input double              LotSize = 50;              // Lot Size
-input int                 MagicNumber = 12345;        // Magic Number
+input int                 MagicNumber = 125421321;        // Magic Number
 input int                 Slippage = 3;               // Slippage in points
 
 //--- Global variables

@@ -1,0 +1,24 @@
+; saved on 2026.02.07
+; Alternative Genetic Algorithm Optimization - Respects Current Unusual RSI Values
+; Use this if RSI_Overbought=19 and RSI_Oversold=50 are intentional
+;
+; Format: Parameter=Start||Step||Min||Max||Optimize(Y/N)
+;
+; === PHASE 1: CORE RSI PARAMETERS ===
+RSI_Period=14||1||7||21||Y
+RSI_Overbought=19.0||1.0||15.0||30.0||Y
+RSI_Oversold=50.0||2.0||40.0||60.0||Y
+RSI_Target_Buy=71.0||2.0||65.0||80.0||Y
+RSI_Target_Sell=70.0||2.0||60.0||75.0||Y
+
+; === PHASE 2: RISK MANAGEMENT ===
+BarsToWait=1||1||1||8||Y
+TimeFrame=16387||0||16385||16390||Y
+
+; === PHASE 3: POSITION SIZING ===
+LotSize=50.0||5.0||10.0||100.0||Y
+
+; === FIXED PARAMETERS ===
+RSI_Applied_Price=1||0||1||1||N
+MagicNumber=12345||0||12345||12345||N
+Slippage=3||0||3||3||N

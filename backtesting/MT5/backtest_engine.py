@@ -10,6 +10,7 @@ import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 from base_strategy import BaseStrategy
+from indicator_utils import calculate_rsi, calculate_ema, calculate_sma, calculate_atr, calculate_macd
 
 
 class BacktestEngine:
@@ -34,91 +35,84 @@ class BacktestEngine:
         if not mt5.initialize():
             raise RuntimeError(f"MT5 initialization failed: {mt5.last_error()}")
         
-        # Indicator handles
-        self.indicator_handles = {}
-        self.setup_indicators()
+        # Store required indicators config (we'll calculate them from data)
+        self.required_indicators = self.strategy.get_required_indicators()
         
-    def setup_indicators(self):
-        """Setup all required indicators for the strategy."""
-        required_indicators = self.strategy.get_required_indicators()
+        # Pre-calculate indicators from historical data
+        self.indicator_data = {}
+        self._precalculate_indicators()
         
-        for indicator_name, params in required_indicators.items():
-            handle = None
-            
+    def _precalculate_indicators(self):
+        """Pre-calculate all indicators from historical data."""
+        # Fetch all historical data first
+        rates = mt5.copy_rates_range(
+            self.strategy.symbol,
+            self.strategy.timeframe,
+            self.start_date - timedelta(days=100),  # Extra data for indicator calculation
+            self.end_date
+        )
+        
+        if rates is None or len(rates) == 0:
+            print("Warning: Could not fetch historical data for indicators")
+            return
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df.set_index('time', inplace=True)
+        
+        # Calculate indicators
+        for indicator_name, params in self.required_indicators.items():
             if indicator_name.lower() == 'rsi':
-                handle = mt5.iRSI(
-                    self.strategy.symbol,
-                    self.strategy.timeframe,
-                    params.get('period', 14),
-                    params.get('applied_price', mt5.PRICE_CLOSE)
-                )
+                period = params.get('period', 14)
+                self.indicator_data['rsi'] = calculate_rsi(df['close'], period)
             elif indicator_name.lower() == 'ema':
-                handle = mt5.iMA(
-                    self.strategy.symbol,
-                    self.strategy.timeframe,
-                    params.get('period', 50),
-                    0,  # shift
-                    mt5.MODE_EMA,
-                    params.get('applied_price', mt5.PRICE_CLOSE)
-                )
+                period = params.get('period', 50)
+                self.indicator_data['ema'] = calculate_ema(df['close'], period)
             elif indicator_name.lower() == 'sma':
-                handle = mt5.iMA(
-                    self.strategy.symbol,
-                    self.strategy.timeframe,
-                    params.get('period', 50),
-                    0,  # shift
-                    mt5.MODE_SMA,
-                    params.get('applied_price', mt5.PRICE_CLOSE)
-                )
+                period = params.get('period', 50)
+                self.indicator_data['sma'] = calculate_sma(df['close'], period)
             elif indicator_name.lower() == 'atr':
-                handle = mt5.iATR(
-                    self.strategy.symbol,
-                    self.strategy.timeframe,
-                    params.get('period', 14)
-                )
+                period = params.get('period', 14)
+                self.indicator_data['atr'] = calculate_atr(df, period)
             elif indicator_name.lower() == 'macd':
-                handle = mt5.iMACD(
-                    self.strategy.symbol,
-                    self.strategy.timeframe,
-                    params.get('fast', 12),
-                    params.get('slow', 26),
-                    params.get('signal', 9),
-                    params.get('applied_price', mt5.PRICE_CLOSE)
-                )
-            
-            if handle is not None and handle != mt5.INVALID_HANDLE:
-                self.indicator_handles[indicator_name] = handle
-            else:
-                print(f"Warning: Failed to create {indicator_name} indicator")
+                fast = params.get('fast', 12)
+                slow = params.get('slow', 26)
+                signal = params.get('signal', 9)
+                macd_df = calculate_macd(df['close'], fast, slow, signal)
+                self.indicator_data['macd'] = macd_df['macd']
+                self.indicator_data['macd_signal'] = macd_df['signal']
+                self.indicator_data['macd_histogram'] = macd_df['histogram']
     
-    def get_indicator_values(self, indicator_name: str, count: int = 1) -> Optional[np.ndarray]:
+    def get_indicator_value(self, indicator_name: str, time: datetime) -> Optional[float]:
         """
-        Get indicator values.
+        Get indicator value for a specific time.
         
         Args:
             indicator_name: Name of the indicator
-            count: Number of values to retrieve
+            time: Bar time
         
         Returns:
-            Array of indicator values or None
+            Indicator value or None
         """
-        if indicator_name not in self.indicator_handles:
+        if indicator_name.lower() not in self.indicator_data:
             return None
         
-        handle = self.indicator_handles[indicator_name]
-        buffer = np.zeros(count, dtype=float)
+        series = self.indicator_data[indicator_name.lower()]
+        if time in series.index:
+            value = series.loc[time]
+            return float(value) if not pd.isna(value) else None
         
-        if indicator_name.lower() == 'macd':
-            # MACD returns 3 buffers
-            result = mt5.copy_buffer(handle, 0, 0, count)  # Main line
-            if result is None:
-                return None
-            return np.array(result)
-        else:
-            result = mt5.copy_buffer(handle, 0, 0, count)
-            if result is None:
-                return None
-            return np.array(result)
+        # Try to find closest time
+        try:
+            closest_time = series.index[series.index <= time][-1] if len(series.index[series.index <= time]) > 0 else None
+            if closest_time:
+                value = series.loc[closest_time]
+                return float(value) if not pd.isna(value) else None
+        except:
+            pass
+        
+        return None
     
     def get_bar_data(self, time: datetime) -> Optional[Dict[str, Any]]:
         """
@@ -160,12 +154,12 @@ class BacktestEngine:
         }
         
         # Get indicator values
-        for indicator_name in self.indicator_handles.keys():
-            values = self.get_indicator_values(indicator_name, 2)
-            if values is not None and len(values) >= 1:
-                bar_data['indicators'][indicator_name] = values[0]
+        for indicator_name in self.required_indicators.keys():
+            value = self.get_indicator_value(indicator_name, bar_data['time'])
+            if value is not None:
+                bar_data['indicators'][indicator_name] = value
                 # Also add to top level for convenience
-                bar_data[indicator_name.lower()] = values[0]
+                bar_data[indicator_name.lower()] = value
         
         return bar_data
     
@@ -251,7 +245,5 @@ class BacktestEngine:
         }
     
     def cleanup(self):
-        """Clean up indicator handles and MT5 connection."""
-        for handle in self.indicator_handles.values():
-            mt5.indicator_release(handle)
+        """Clean up MT5 connection."""
         mt5.shutdown()
