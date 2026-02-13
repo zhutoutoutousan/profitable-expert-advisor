@@ -7,19 +7,19 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #include <Trade\Trade.mqh>
-//--- Eingabeparameter (Input Parameters)
-input int    EMA_Periode = 26;           // EMA Periode
-input double PreisSchwelle = 2050.0;       // Preisbewegung Schwelle in Pips
-input double SteigungSchwelle = 100.0;     // EMA Steigung Schwelle in Pips
-input int    ÜberwachungTimeout = 750;   // Überwachungszeit in Sekunden
-input double TrailingStop = 400.0;        // Gleitender Stop in Pips
-input double LotGröße = 0.1;             // Handelsvolumen
+//--- Eingabeparameter (Input Parameters) - Optimized Profitable Parameters
+input int    EMA_Periode = 46;           // EMA Periode
+input double PreisSchwelle = 600.0;       // Preisbewegung Schwelle in Pips
+input double SteigungSchwelle = 80.0;     // EMA Steigung Schwelle in Pips
+input int    ÜberwachungTimeout = 800;   // Überwachungszeit in Sekunden
+input double TrailingStop = 250.0;        // Gleitender Stop in Pips
+input double LotGröße = 0.03;             // Handelsvolumen
 input int    MagicNumber = 12350;        // Magic Number für Trades
 input bool   UseSpreadAdjustment = true; // Spread-Anpassung verwenden
 input ENUM_TIMEFRAMES Timeframe = PERIOD_H1; // Zeitraum für Analyse
 input bool   UseBarData = true;          // Bar-Daten statt Tick-Daten verwenden
-input int    MaxTradesPerCrossover = 4;  // Maximale Trades pro Crossover-Ereignis
-input int    ProfitCheckBars = 26;       // Bars bis zur Profit-Prüfung
+input int    MaxTradesPerCrossover = 9;  // Maximale Trades pro Crossover-Ereignis
+input int    ProfitCheckBars = 18;       // Bars bis zur Profit-Prüfung
 input bool   CloseUnprofitableTrades = true; // Unprofitable Trades nach X Bars schließen
 
 //--- Globale Variablen (Global Variables)

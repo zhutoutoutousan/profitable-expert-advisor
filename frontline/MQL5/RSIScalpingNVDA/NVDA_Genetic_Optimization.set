@@ -1,0 +1,28 @@
+; saved on 2026.02.07
+; Genetic Algorithm Optimization Parameters for RSIScalpingNVDA
+; Recommended ranges for profitable parameter discovery
+;
+; Format: Parameter=Start||Step||Min||Max||Optimize(Y/N)
+;
+; NOTE: Current values show RSI_Overbought=19 and RSI_Oversold=50 which are unusual.
+; This config uses STANDARD RSI ranges (60-85 overbought, 15-40 oversold).
+; If your current values are intentional, use the alternative ranges in OPTIMIZATION_GUIDE.md
+;
+; === PHASE 1: CORE RSI PARAMETERS (Primary Optimization) ===
+RSI_Period=14||1||7||21||Y
+RSI_Overbought=70.0||2.0||60.0||85.0||Y
+RSI_Oversold=30.0||2.0||15.0||40.0||Y
+RSI_Target_Buy=75.0||2.0||65.0||90.0||Y
+RSI_Target_Sell=25.0||2.0||10.0||35.0||Y
+
+; === PHASE 2: RISK MANAGEMENT (Secondary Optimization) ===
+BarsToWait=2||1||1||8||Y
+TimeFrame=16387||0||16385||16390||Y
+
+; === PHASE 3: POSITION SIZING (Optimize with caution) ===
+LotSize=50.0||5.0||10.0||100.0||Y
+
+; === FIXED PARAMETERS (Do Not Optimize) ===
+RSI_Applied_Price=1||0||1||1||N
+MagicNumber=12345||0||12345||12345||N
+Slippage=3||0||3||3||N

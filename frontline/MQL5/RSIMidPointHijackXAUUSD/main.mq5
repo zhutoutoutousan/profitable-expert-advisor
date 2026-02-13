@@ -13,7 +13,7 @@
 // Input Parameters
 input group "General Settings"
 input ENUM_TIMEFRAMES InpTimeframe = PERIOD_H1;  // Trading Timeframe
-input double InpLotSize = 0.01;               // Lot Size
+input double InpLotSize = 0.02;               // Lot Size
 input int    InpMagicNumberRSIFollow = 1001; // Magic Number RSI Follow
 input int    InpMagicNumberRSIReverse = 1002;// Magic Number RSI Reverse
 input int    InpMagicNumberEMACross = 1003;  // Magic Number EMA Cross
