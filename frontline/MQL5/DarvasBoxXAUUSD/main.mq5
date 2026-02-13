@@ -11,6 +11,7 @@
 #include <Trade\Trade.mqh>
 #include <Indicators\Trend.mqh>
 #include <Indicators\Volumes.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 
 // Input parameters
 input int    BoxPeriod = 165;        // Period for Darvas Box calculation
@@ -33,6 +34,9 @@ input double TrendThreshold = 4.94;   // Trend strength threshold
 input int    VolumeMA_Period = 110;   // Period for Volume MA
 input double VolumeThresholdMultiplier = 1.5;  // Volume spike threshold
 
+// Magic Number
+input int MagicNumber = 135790;       // Magic Number for Trades
+
 // Global variables
 double boxHigh = 0;
 double boxLow = 0;
@@ -42,7 +46,6 @@ string boxName = "DarvasBox_";
 double minStopLevel = 0;
 double point = 0;
 CTrade trade;
-ulong magicNumber = 135790;
 
 // Indicator handles
 int maHandle;
@@ -77,7 +80,7 @@ int OnInit()
    trade.SetDeviationInPoints(10);
    trade.SetTypeFilling(ORDER_FILLING_IOC);
    trade.SetAsyncMode(false);
-   trade.SetExpertMagicNumber(magicNumber);
+   trade.SetExpertMagicNumber(MagicNumber);
    
    if(EnableLogging)
    {
@@ -343,7 +346,7 @@ void OnTick()
             Print("Breakout Signal Detected - Price above box high");
             
          // Buy signal
-         if(PositionsTotal() == 0) // No existing positions
+         if(!PositionExistsByMagic(_Symbol, MagicNumber)) // No existing positions with our magic number
          {
             double sl = currentPrice - StopLoss * _Point;
             double tp = currentPrice + TakeProfit * _Point;
@@ -364,7 +367,7 @@ void OnTick()
             Print("Breakdown Signal Detected - Price below box low");
             
          // Sell signal
-         if(PositionsTotal() == 0) // No existing positions
+         if(!PositionExistsByMagic(_Symbol, MagicNumber)) // No existing positions with our magic number
          {
             double sl = currentPrice + StopLoss * _Point;
             double tp = currentPrice - TakeProfit * _Point;

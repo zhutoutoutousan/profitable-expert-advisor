@@ -8,6 +8,7 @@
 #property version   "1.00"
 
 #include <Trade\Trade.mqh>
+#include "../_united/MagicNumberHelpers.mqh"
 
 //--- Input parameters
 input ENUM_TIMEFRAMES      TimeFrame = PERIOD_H1; // Timeframe for Analysis
@@ -95,8 +96,8 @@ void OnTick()
    // Check for existing position
    CheckExistingPosition();
    
-   // Check for new entry signals
-   if(!position_open)
+   // Check for new entry signals (also verify no position exists with our magic number)
+   if(!position_open && !PositionExistsByMagic(_Symbol, MagicNumber))
    {
       CheckEntrySignals();
    }
@@ -129,8 +130,8 @@ void CheckExistingPosition()
       return;
    }
    
-   // Check if position still exists
-   if(!PositionSelectByTicket(position_ticket))
+   // Check if position still exists with correct magic number
+   if(!PositionSelectByTicketAndMagic(position_ticket, MagicNumber))
    {
       position_open = false;
       position_ticket = 0;
@@ -271,8 +272,17 @@ void OpenSellPosition()
 //+------------------------------------------------------------------+
 void ClosePosition()
 {
-   if(trade.PositionClose(position_ticket))
+   // Close position using helper function that verifies symbol AND magic number
+   if(ClosePositionByMagic(trade, _Symbol, MagicNumber))
    {
+      position_open = false;
+      position_ticket = 0;
+      rsi_against_position = false;
+      bars_against_count = 0;
+   }
+   else
+   {
+      // Position doesn't exist or wrong magic number - reset tracking anyway
       position_open = false;
       position_ticket = 0;
       rsi_against_position = false;
