@@ -78,7 +78,7 @@ input double RSI_MSFT_Oversold = 50;
 input double RSI_MSFT_Target_Buy = 71;
 input double RSI_MSFT_Target_Sell = 70;
 input int RSI_MSFT_BarsToWait = 1;
-input double RSI_MSFT_LotSize = 50;
+input double RSI_MSFT_LotSize = 5;
 
 //--- RSI Scalping Parameters: NVDA
 input ENUM_TIMEFRAMES RSI_NVDA_TimeFrame = PERIOD_M15;
@@ -88,7 +88,7 @@ input double RSI_NVDA_Oversold = 38;
 input double RSI_NVDA_Target_Buy = 90;
 input double RSI_NVDA_Target_Sell = 70;
 input int RSI_NVDA_BarsToWait = 5;
-input double RSI_NVDA_LotSize = 50;
+input double RSI_NVDA_LotSize = 5;
 
 //--- RSI Scalping Parameters: TSLA
 input ENUM_TIMEFRAMES RSI_TSLA_TimeFrame = PERIOD_H1;
@@ -98,7 +98,7 @@ input double RSI_TSLA_Oversold = 73;
 input double RSI_TSLA_Target_Buy = 87;
 input double RSI_TSLA_Target_Sell = 33;
 input int RSI_TSLA_BarsToWait = 1;
-input double RSI_TSLA_LotSize = 50;
+input double RSI_TSLA_LotSize = 5;
 
 //--- Mean Reversion Parameters
 input int EMA_Periode = 46;
